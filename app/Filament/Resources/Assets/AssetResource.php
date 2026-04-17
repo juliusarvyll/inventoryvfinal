@@ -6,6 +6,8 @@ use App\Filament\Resources\Assets\Pages\CreateAsset;
 use App\Filament\Resources\Assets\Pages\EditAsset;
 use App\Filament\Resources\Assets\Pages\ListAssets;
 use App\Filament\Resources\Assets\Pages\ViewAsset;
+use App\Filament\Resources\Assets\RelationManagers\PreventiveMaintenanceSessionsRelationManager;
+use App\Filament\Resources\Assets\RelationManagers\PreventiveMaintenancesRelationManager;
 use App\Filament\Resources\Assets\Schemas\AssetForm;
 use App\Filament\Resources\Assets\Schemas\AssetInfolist;
 use App\Filament\Resources\Assets\Tables\AssetsTable;
@@ -56,7 +58,8 @@ class AssetResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            PreventiveMaintenancesRelationManager::class,
+            PreventiveMaintenanceSessionsRelationManager::class,
         ];
     }
 

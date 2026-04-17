@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use App\Enums\InventoryCategoryType;
+use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    /** @use HasFactory<\Database\Factories\CategoryFactory> */
+    /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
     /**
@@ -61,5 +63,11 @@ class Category extends Model
     public function components(): HasMany
     {
         return $this->hasMany(Component::class);
+    }
+
+    public function preventiveMaintenances(): BelongsToMany
+    {
+        return $this->belongsToMany(PreventiveMaintenance::class, 'category_preventive_maintenance')
+            ->withTimestamps();
     }
 }

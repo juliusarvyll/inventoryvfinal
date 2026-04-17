@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Widgets;
 
 use App\Models\License;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -35,6 +36,11 @@ class ExpiringLicensesWidget extends TableWidget
                 TextColumn::make('seats')
                     ->label('Seats Available')
                     ->formatStateUsing(fn (License $record): string => sprintf('%d / %d', $record->seatsAvailable(), $record->seats)),
+            ])
+            ->recordActions([
+                Action::make('open')
+                    ->url(fn (License $record): string => route('filament.admin.resources.licenses.view', ['record' => $record]))
+                    ->openUrlInNewTab(),
             ])
             ->paginated(false);
     }

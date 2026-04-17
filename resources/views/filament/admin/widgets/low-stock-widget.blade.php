@@ -12,6 +12,7 @@
                             <th class="px-3 py-2 font-medium">Remaining</th>
                             <th class="px-3 py-2 font-medium">Minimum</th>
                             <th class="px-3 py-2 font-medium">Location</th>
+                            <th class="px-3 py-2 font-medium">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -22,6 +23,14 @@
                                 <td class="px-3 py-2">{{ $row['remaining'] }}</td>
                                 <td class="px-3 py-2">{{ $row['minimum'] }}</td>
                                 <td class="px-3 py-2">{{ $row['location'] ?: 'Unassigned' }}</td>
+                                <td class="px-3 py-2">
+                                    <a
+                                        href="{{ $row['manage_url'] }}"
+                                        class="text-primary-600 hover:text-primary-500 font-medium"
+                                    >
+                                        Manage
+                                    </a>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

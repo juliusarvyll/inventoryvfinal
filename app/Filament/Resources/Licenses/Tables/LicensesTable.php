@@ -10,9 +10,14 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class LicensesTable
 {
@@ -63,7 +68,34 @@ class LicensesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('manufacturer_id')
+                    ->label('Manufacturer')
+                    ->relationship('manufacturer', 'name')
+                    ->searchable()
+                    ->preload(),
+                TernaryFilter::make('requestable'),
+                Filter::make('expiration_date')
+                    ->label('Expiration Date')
+                    ->schema([
+                        DatePicker::make('expires_from'),
+                        DatePicker::make('expires_until'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['expires_from'] ?? null,
+                                fn (Builder $query, string $date): Builder => $query->whereDate('expiration_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['expires_until'] ?? null,
+                                fn (Builder $query, string $date): Builder => $query->whereDate('expiration_date', '<=', $date),
+                            );
+                    }),
             ])
             ->recordActions([
                 ViewAction::make(),

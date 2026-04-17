@@ -31,7 +31,7 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
 
         return [
             Stat::make('Assets', number_format($totalAssets))
-                ->description("{$availableAssets} available · {$deployedAssets} deployed")
+                ->description("{$availableAssets} available - {$deployedAssets} deployed")
                 ->color('info'),
             Stat::make('License Seats', sprintf('%d / %d', $usedSeats, $totalSeats))
                 ->description('Used versus purchased seats')

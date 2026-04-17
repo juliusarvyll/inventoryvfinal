@@ -28,6 +28,7 @@ class LowStockWidget extends Widget
                 'remaining' => $accessory->qtyRemaining(),
                 'minimum' => $accessory->min_qty,
                 'location' => $accessory->location?->name,
+                'manage_url' => route('filament.admin.resources.accessories.edit', ['record' => $accessory]),
             ]);
         });
 
@@ -38,6 +39,7 @@ class LowStockWidget extends Widget
                 'remaining' => $consumable->qtyRemaining(),
                 'minimum' => $consumable->min_qty,
                 'location' => $consumable->location?->name,
+                'manage_url' => route('filament.admin.resources.consumables.edit', ['record' => $consumable]),
             ]);
         });
 
@@ -48,6 +50,7 @@ class LowStockWidget extends Widget
                 'remaining' => $component->qtyRemaining(),
                 'minimum' => $component->min_qty,
                 'location' => $component->location?->name,
+                'manage_url' => route('filament.admin.resources.components.edit', ['record' => $component]),
             ]);
         });
 

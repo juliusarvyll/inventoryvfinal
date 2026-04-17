@@ -10,9 +10,14 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class AssetsTable
 {
@@ -33,13 +38,13 @@ class AssetsTable
                     ->searchable(),
                 TextColumn::make('activeCheckout.assignee.name')
                     ->label('Assigned to')
-                    ->placeholder('—')
+                    ->placeholder('-')
                     ->searchable(),
                 TextColumn::make('activeCheckout.assigned_at')
                     ->label('Checked out')
                     ->dateTime()
                     ->sortable()
-                    ->placeholder('—')
+                    ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('supplier.name')
                     ->searchable(),
@@ -71,7 +76,41 @@ class AssetsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('status_label_id')
+                    ->label('Status')
+                    ->relationship('statusLabel', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('location_id')
+                    ->label('Location')
+                    ->relationship('location', 'name')
+                    ->searchable()
+                    ->preload(),
+                TernaryFilter::make('requestable'),
+                Filter::make('checked_out')
+                    ->label('Checked Out')
+                    ->query(fn (Builder $query): Builder => $query->whereHas('activeCheckout')),
+                Filter::make('purchase_date')
+                    ->schema([
+                        DatePicker::make('purchased_from'),
+                        DatePicker::make('purchased_until'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['purchased_from'] ?? null,
+                                fn (Builder $query, string $date): Builder => $query->whereDate('purchase_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['purchased_until'] ?? null,
+                                fn (Builder $query, string $date): Builder => $query->whereDate('purchase_date', '<=', $date),
+                            );
+                    }),
             ])
             ->recordActions([
                 ViewAction::make(),

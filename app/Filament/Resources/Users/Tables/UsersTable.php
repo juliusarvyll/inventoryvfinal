@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Enums\UserRole;
 use App\Filament\Actions\SetUserRoleBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -9,6 +10,8 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class UsersTable
@@ -55,7 +58,14 @@ class UsersTable
                     ->searchable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('role')
+                    ->options(collect(UserRole::cases())->mapWithKeys(
+                        fn (UserRole $role): array => [$role->value => $role->value],
+                    )->all()),
+                TernaryFilter::make('is_active'),
+                TernaryFilter::make('email_verified_at')
+                    ->label('Email Verified')
+                    ->nullable(),
             ])
             ->recordActions([
                 ViewAction::make(),

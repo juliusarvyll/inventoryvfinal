@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\AssetFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Asset extends Model
 {
-    /** @use HasFactory<\Database\Factories\AssetFactory> */
+    /** @use HasFactory<AssetFactory> */
     use HasFactory;
 
     /**
@@ -87,5 +88,18 @@ class Asset extends Model
         return $this->belongsToMany(Component::class)
             ->withPivot(['qty', 'installed_at'])
             ->withTimestamps();
+    }
+
+    public function preventiveMaintenances(): BelongsToMany
+    {
+        return $this->belongsToMany(PreventiveMaintenance::class, 'asset_preventive_maintenance')
+            ->withTimestamps();
+    }
+
+    public function preventiveMaintenanceSessions(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceSession::class)
+            ->latest('started_at')
+            ->latest('id');
     }
 }
