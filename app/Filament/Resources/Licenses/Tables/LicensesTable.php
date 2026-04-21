@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Licenses\Tables;
 use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
 use App\Filament\Actions\ChangeManufacturerBulkAction;
+use App\Filament\Actions\ExportCsvAction;
 use App\Models\License;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -102,11 +103,13 @@ class LicensesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportCsvAction::make(),
                 BulkActionGroup::make([
                     ChangeCategoryBulkAction::make(InventoryCategoryType::License, 'licenses'),
                     ChangeManufacturerBulkAction::make('licenses'),
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['category', 'manufacturer']));
     }
 }

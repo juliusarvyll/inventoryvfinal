@@ -4,6 +4,7 @@ use App\Enums\ItemRequestStatus;
 use App\Filament\Admin\Widgets\ExpiringLicensesWidget;
 use App\Filament\Admin\Widgets\LowStockWidget;
 use App\Filament\Admin\Widgets\RecentRequestsWidget;
+use App\Filament\Admin\Widgets\RequestStatusChartWidget;
 use App\Filament\Admin\Widgets\StatsOverviewWidget;
 use App\Filament\Resources\Assets\Pages\ListAssets;
 use App\Filament\Resources\Consumables\Pages\ListConsumables;
@@ -61,7 +62,13 @@ test('admin widgets expose actionable shortcuts and clean stats copy', function 
 
     Livewire::test(StatsOverviewWidget::class)
         ->assertSee('available -')
+        ->assertSee('Checked Out Assets')
+        ->assertSee('Expiring Licenses')
+        ->assertSee('Requests Pipeline')
         ->assertDontSee('·');
+
+    Livewire::test(RequestStatusChartWidget::class)
+        ->assertSee('Request Pipeline');
 
     Livewire::test(RecentRequestsWidget::class)
         ->assertSee('Requester')

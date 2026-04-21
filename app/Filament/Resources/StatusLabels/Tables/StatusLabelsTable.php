@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StatusLabels\Tables;
 
+use App\Filament\Actions\ExportCsvAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -42,6 +43,7 @@ class StatusLabelsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportCsvAction::make(),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

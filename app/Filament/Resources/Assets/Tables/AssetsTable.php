@@ -6,6 +6,7 @@ use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
 use App\Filament\Actions\ChangeLocationBulkAction;
 use App\Filament\Actions\ChangeSupplierBulkAction;
+use App\Filament\Actions\ExportCsvAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -117,12 +118,14 @@ class AssetsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportCsvAction::make(),
                 BulkActionGroup::make([
                     ChangeCategoryBulkAction::make(InventoryCategoryType::Asset, 'assets'),
                     ChangeLocationBulkAction::make('assets'),
                     ChangeSupplierBulkAction::make('assets'),
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['category', 'location', 'statusLabel', 'assetModel', 'supplier']));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Suppliers\Tables;
 
+use App\Filament\Actions\ExportCsvAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -68,6 +69,7 @@ class SuppliersTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportCsvAction::make(),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

@@ -70,4 +70,9 @@ class Category extends Model
         return $this->belongsToMany(PreventiveMaintenance::class, 'category_preventive_maintenance')
             ->withTimestamps();
     }
+
+    public function preventiveMaintenanceChecklists(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceChecklist::class);
+    }
 }

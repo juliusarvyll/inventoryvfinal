@@ -2,6 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Widgets\AssetsByCategoryWidget;
+use App\Filament\Admin\Widgets\AssetsStatusChartWidget;
+use App\Filament\Admin\Widgets\ExpiringLicensesWidget;
+use App\Filament\Admin\Widgets\LowStockWidget;
+use App\Filament\Admin\Widgets\RecentRequestsWidget;
+use App\Filament\Admin\Widgets\RequestStatusChartWidget;
+use App\Filament\Admin\Widgets\StatsOverviewWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -43,6 +50,13 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
+                StatsOverviewWidget::class,
+                AssetsStatusChartWidget::class,
+                RequestStatusChartWidget::class,
+                AssetsByCategoryWidget::class,
+                RecentRequestsWidget::class,
+                LowStockWidget::class,
+                ExpiringLicensesWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

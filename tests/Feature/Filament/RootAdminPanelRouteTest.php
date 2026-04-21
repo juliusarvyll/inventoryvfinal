@@ -16,6 +16,14 @@ test('the admin panel logout route resolves to the shared logout endpoint', func
     expect(route('filament.admin.auth.logout', absolute: false))->toBe('/logout');
 });
 
+test('admin users can render the admin panel dashboard', function () {
+    $response = $this
+        ->actingAs(User::factory()->itStaff()->create())
+        ->get(route('filament.admin.pages.dashboard', absolute: false));
+
+    $response->assertOk();
+});
+
 test('admin users can render the item request create page', function () {
     $response = $this
         ->actingAs(User::factory()->itStaff()->create())

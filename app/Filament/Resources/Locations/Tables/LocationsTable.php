@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Locations\Tables;
 
+use App\Filament\Actions\ExportCsvAction;
 use App\Filament\Actions\SetParentLocationBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -69,10 +70,12 @@ class LocationsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportCsvAction::make(),
                 BulkActionGroup::make([
                     SetParentLocationBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['parent']));
     }
 }

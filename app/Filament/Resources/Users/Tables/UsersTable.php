@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Enums\UserRole;
+use App\Filament\Actions\ExportCsvAction;
 use App\Filament\Actions\SetUserRoleBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -72,6 +73,7 @@ class UsersTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ExportCsvAction::make(),
                 BulkActionGroup::make([
                     SetUserRoleBulkAction::make(),
                     DeleteBulkAction::make(),

@@ -7,7 +7,7 @@ use App\Filament\Resources\Locations\Pages\EditLocation;
 use App\Filament\Resources\Locations\Pages\ListLocations;
 use App\Filament\Resources\Locations\Pages\ViewLocation;
 use App\Filament\Resources\Locations\RelationManagers\AssetsRelationManager;
-use App\Filament\Resources\Locations\RelationManagers\PreventiveMaintenancesRelationManager;
+use App\Filament\Resources\Locations\RelationManagers\PreventiveMaintenanceSchedulesRelationManager;
 use App\Filament\Resources\Locations\Schemas\LocationForm;
 use App\Filament\Resources\Locations\Schemas\LocationInfolist;
 use App\Filament\Resources\Locations\Tables\LocationsTable;
@@ -57,7 +57,7 @@ class LocationResource extends Resource
     {
         return [
             AssetsRelationManager::class,
-            PreventiveMaintenancesRelationManager::class,
+            PreventiveMaintenanceSchedulesRelationManager::class,
         ];
     }
 

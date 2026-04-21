@@ -59,4 +59,9 @@ class Location extends Model
     {
         return $this->hasMany(PreventiveMaintenance::class);
     }
+
+    public function preventiveMaintenanceSchedules(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceSchedule::class);
+    }
 }

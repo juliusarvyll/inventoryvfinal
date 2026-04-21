@@ -36,4 +36,9 @@ class AdminPanelResourcePolicy
     {
         return $user->hasRole(UserRole::Admin);
     }
+
+    public function reorder(User $user): bool
+    {
+        return $this->update($user, null);
+    }
 }

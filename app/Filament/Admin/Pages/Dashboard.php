@@ -7,6 +7,7 @@ use App\Filament\Admin\Widgets\AssetsStatusChartWidget;
 use App\Filament\Admin\Widgets\ExpiringLicensesWidget;
 use App\Filament\Admin\Widgets\LowStockWidget;
 use App\Filament\Admin\Widgets\RecentRequestsWidget;
+use App\Filament\Admin\Widgets\RequestStatusChartWidget;
 use App\Filament\Admin\Widgets\StatsOverviewWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 
@@ -17,6 +18,7 @@ class Dashboard extends BaseDashboard
         return [
             StatsOverviewWidget::class,
             AssetsStatusChartWidget::class,
+            RequestStatusChartWidget::class,
             AssetsByCategoryWidget::class,
             RecentRequestsWidget::class,
             LowStockWidget::class,
@@ -29,4 +31,3 @@ class Dashboard extends BaseDashboard
         return 2;
     }
 }
-

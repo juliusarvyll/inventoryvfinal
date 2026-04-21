@@ -102,4 +102,17 @@ class Asset extends Model
             ->latest('started_at')
             ->latest('id');
     }
+
+    public function preventiveMaintenanceSchedules(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceSchedule::class, 'location_id', 'location_id')
+            ->where('category_id', $this->category_id);
+    }
+
+    public function preventiveMaintenanceExecutions(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceExecution::class)
+            ->latest('started_at')
+            ->latest('id');
+    }
 }
