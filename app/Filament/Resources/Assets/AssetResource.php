@@ -8,7 +8,6 @@ use App\Filament\Resources\Assets\Pages\ListAssets;
 use App\Filament\Resources\Assets\Pages\ViewAsset;
 use App\Filament\Resources\Assets\RelationManagers\PreventiveMaintenanceExecutionsRelationManager;
 use App\Filament\Resources\Assets\RelationManagers\PreventiveMaintenanceSchedulesRelationManager;
-use App\Filament\Resources\Assets\RelationManagers\PreventiveMaintenanceSessionsRelationManager;
 use App\Filament\Resources\Assets\Schemas\AssetForm;
 use App\Filament\Resources\Assets\Schemas\AssetInfolist;
 use App\Filament\Resources\Assets\Tables\AssetsTable;
@@ -59,7 +58,6 @@ class AssetResource extends Resource
     public static function getRelations(): array
     {
         return [
-            PreventiveMaintenanceSessionsRelationManager::class,
             PreventiveMaintenanceSchedulesRelationManager::class,
             PreventiveMaintenanceExecutionsRelationManager::class,
         ];
