@@ -28,15 +28,23 @@ class PreventiveMaintenanceSchedulesTable
                     ->label('Location')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('checklist.category.name')
+                TextColumn::make('checklists.category.name')
                     ->label('Category')
                     ->badge()
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('checklist.instructions')
-                    ->label('Checklist')
-                    ->limit(30)
-                    ->tooltip(fn (?string $state): ?string => $state)
+                TextColumn::make('checklists')
+                    ->label('Checklists')
+                    ->formatStateUsing(function ($state) {
+                        if ($state->isNotEmpty()) {
+                            return $state->pluck('instructions')->take(3)->join(', ');
+                        }
+                        return '-';
+                    })
+                    ->limit(50)
+                    ->tooltip(function ($record) {
+                        return $record->checklists->pluck('instructions')->join(', ');
+                    })
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('scheduled_for')
@@ -66,32 +74,50 @@ class PreventiveMaintenanceSchedulesTable
                     ->label('Start Execution')
                     ->icon('heroicon-o-play')
                     ->form(function ($record): array {
-                        $checklist = $record->checklist;
-                        $checklist->loadMissing('items');
+                        $record->loadMissing('checklists.items', 'location');
+                        
+                        $checklists = $record->checklists->mapWithKeys(fn ($checklist) => [
+                            $checklist->id => $checklist->category->name . ' - ' . ($checklist->instructions ?: 'No instructions'),
+                        ])->toArray();
+                        
+                        $checklistItems = $record->checklists->mapWithKeys(fn ($checklist) => [
+                            $checklist->id => $checklist->items->map(fn ($item): array => [
+                                'id' => $item->getKey(),
+                                'task' => $item->task,
+                                'input_label' => $item->input_label,
+                            ])->toArray(),
+                        ])->toArray();
+                        
                         return [
+                            \Filament\Forms\Components\Select::make('checklist_id')
+                                ->label('Checklist')
+                                ->options($checklists)
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->live(),
                             Select::make('asset_id')
                                 ->label('Asset')
                                 ->options(function () use ($record): array {
                                     return Asset::query()
                                         ->where('location_id', $record->location_id)
-                                        ->where('category_id', $record->category)
                                         ->pluck('name', 'id')
                                         ->toArray();
                                 })
                                 ->searchable()
                                 ->preload()
-                                ->required(),
+                                ->required()
+                                ->live(),
                             \Filament\Forms\Components\Repeater::make('items')
-                                ->label('Checklist')
+                                ->label('Checklist Items')
                                 ->addable(false)
                                 ->deletable(false)
                                 ->reorderable(false)
                                 ->collapsed(false)
-                                ->default($checklist->items->map(fn ($item): array => [
-                                    'id' => $item->getKey(),
-                                    'task' => $item->task,
-                                    'input_label' => $item->input_label,
-                                ])->toArray())
+                                ->default(function (\Filament\Schemas\Components\Utilities\Get $get) use ($checklistItems): array {
+                                    $checklistId = $get('checklist_id');
+                                    return $checklistItems[$checklistId] ?? [];
+                                })
                                 ->schema([
                                     \Filament\Forms\Components\Hidden::make('id')
                                         ->required(),
@@ -127,10 +153,13 @@ class PreventiveMaintenanceSchedulesTable
                                 ->columnSpanFull(),
                         ];
                     })
-                    ->action(function ($record, array $data): void {
-                        $asset = Asset::findOrFail($data['asset_id']);
+                    ->action(function (PreventiveMaintenanceSchedule $record, array $data): void {
+                        $checklist = \App\Models\PreventiveMaintenanceChecklist::find($data['checklist_id']);
+                        $asset = \App\Models\Asset::find($data['asset_id']);
+                        
                         app(\App\Actions\Inventory\StartPreventiveMaintenanceExecution::class)(
                             schedule: $record,
+                            checklist: $checklist,
                             asset: $asset,
                             items: $data['items'] ?? [],
                             actor: auth()->user(),
@@ -142,6 +171,6 @@ class PreventiveMaintenanceSchedulesTable
                 ExportCsvAction::make(),
                 DeleteBulkAction::make(),
             ])
-            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['location', 'checklist.category']));
+            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['location', 'checklists.category']));
     }
 }

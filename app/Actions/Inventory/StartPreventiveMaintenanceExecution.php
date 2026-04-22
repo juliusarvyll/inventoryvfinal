@@ -25,23 +25,26 @@ class StartPreventiveMaintenanceExecution
      */
     public function __invoke(
         PreventiveMaintenanceSchedule $schedule,
+        PreventiveMaintenanceChecklist $checklist,
         Asset $asset,
         array $items,
         ?User $actor = null,
         ?string $generalNotes = null,
     ): PreventiveMaintenanceExecution {
-        $schedule->loadMissing('checklist.items', 'location', 'category');
+        $schedule->loadMissing('checklists.items', 'location', 'category');
+        $checklist->loadMissing('items', 'category');
 
         if ($schedule->location_id !== $asset->location_id) {
             throw new RuntimeException('The selected preventive maintenance schedule does not match the asset location.');
         }
 
-        if ($schedule->category !== $asset->category_id) {
-            throw new RuntimeException('The selected preventive maintenance schedule does not match the asset category.');
+        if ($checklist->category_id !== $asset->category_id) {
+            throw new RuntimeException('The selected preventive maintenance checklist does not match the asset category.');
         }
 
-        /** @var PreventiveMaintenanceChecklist $checklist */
-        $checklist = $schedule->checklist;
+        if (! $schedule->checklists->contains($checklist)) {
+            throw new RuntimeException('The selected checklist is not associated with this schedule.');
+        }
 
         if (! $checklist->is_active) {
             throw new RuntimeException('The selected preventive maintenance checklist is inactive.');

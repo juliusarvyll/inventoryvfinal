@@ -6,6 +6,7 @@ use Database\Factories\PreventiveMaintenanceScheduleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PreventiveMaintenanceSchedule extends Model
@@ -13,12 +14,23 @@ class PreventiveMaintenanceSchedule extends Model
     /** @use HasFactory<PreventiveMaintenanceScheduleFactory> */
     use HasFactory;
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saved(function ($model) {
+            if (isset($model->checklist_ids) && is_array($model->checklist_ids)) {
+                $model->checklists()->sync($model->checklist_ids);
+            }
+        });
+    }
+
     /**
      * @var list<string>
      */
     protected $fillable = [
         'location_id',
-        'preventive_maintenance_checklist_id',
+        'checklist_ids',
         'scheduled_for',
         'is_active',
         'created_by',
@@ -45,12 +57,17 @@ class PreventiveMaintenanceSchedule extends Model
 
     public function getCategoryAttribute(): ?int
     {
-        return $this->checklist?->category_id;
+        return $this->checklists->first()?->category_id ?? null;
     }
 
-    public function checklist(): BelongsTo
+    public function getChecklistIdsAttribute(): array
     {
-        return $this->belongsTo(PreventiveMaintenanceChecklist::class, 'preventive_maintenance_checklist_id');
+        return $this->checklists->pluck('id')->toArray();
+    }
+
+    public function checklists(): BelongsToMany
+    {
+        return $this->belongsToMany(PreventiveMaintenanceChecklist::class, 'preventive_maintenance_schedule_checklist', 'preventive_maintenance_schedule_id', 'preventive_maintenance_checklist_id');
     }
 
     public function assets(): HasMany

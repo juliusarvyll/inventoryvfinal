@@ -34,12 +34,10 @@ final class ChangeCategoryBulkAction
                     ->preload(),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records) use ($categoryType): void {
-                $categoryId = $this->getData()['category_id'] ?? null;
+            ->action(function (Collection $records, array $data) use ($categoryType): void {
+                $categoryId = $data['category_id'] ?? null;
 
                 if (blank($categoryId)) {
-                    $this->failure();
-
                     return;
                 }
 
@@ -49,15 +47,11 @@ final class ChangeCategoryBulkAction
                     ->first();
 
                 if (! $category) {
-                    $this->failure();
-
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof Model) {
-                        $this->reportBulkProcessingFailure();
-
                         continue;
                     }
 
@@ -65,11 +59,9 @@ final class ChangeCategoryBulkAction
                         $record->category()->associate($category);
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        // Continue processing other records
                     }
                 }
-
-                $this->success();
             })
             ->deselectRecordsAfterCompletion();
     }
