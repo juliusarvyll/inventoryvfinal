@@ -45,18 +45,19 @@ class PreventiveMaintenanceSchedulesRelationManager extends RelationManager
                     ->label('Start preventive maintenance')
                     ->icon('heroicon-o-play')
                     ->color('success')
-                    ->visible(fn (): bool => auth()->user()?->can('create', PreventiveMaintenanceExecution::class) ?? false)
+                    ->visible(fn ($record): bool => auth()->user()?->can('create', PreventiveMaintenanceExecution::class) ?? false && $this->getOwnerRecord()->category_id === $record->category)
                     ->modalWidth('5xl')
                     ->modalHeading('Start Preventive Maintenance')
-                    ->fillForm(fn (): array => PreventiveMaintenanceExecutionForm::executionFormData($this->getOwnerRecord()->category->checklist))
+                    ->fillForm(fn ($record): array => PreventiveMaintenanceExecutionForm::executionFormData($record))
                     ->schema(PreventiveMaintenanceExecutionForm::executionSchema())
-                    ->action(function (array $data): void {
+                    ->action(function ($record, array $data): void {
                         app(StartPreventiveMaintenanceExecution::class)(
-                            $this->getOwnerRecord(),
-                            $this->getOwnerRecord(),
-                            $data['items'] ?? [],
-                            auth()->user(),
-                            $data['general_notes'] ?? null,
+                            schedule: $record,
+                            checklist: $record->checklist,
+                            asset: $this->getOwnerRecord(),
+                            items: $data['items'] ?? [],
+                            actor: auth()->user(),
+                            generalNotes: $data['general_notes'] ?? null,
                         );
 
                         Notification::make()

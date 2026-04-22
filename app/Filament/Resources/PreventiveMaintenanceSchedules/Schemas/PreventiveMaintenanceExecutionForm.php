@@ -15,41 +15,34 @@ use Filament\Schemas\Components\Utilities\Get;
 class PreventiveMaintenanceExecutionForm
 {
     /**
-     * @return array{checklists: array<int, string>}
+     * @return array{checklist_items: array}
      */
     public static function executionFormData(PreventiveMaintenanceSchedule $schedule): array
     {
-        $checklists = $schedule->checklists;
+        $schedule->loadMissing('checklist.items');
         
         return [
-            'checklists' => $checklists->pluck('id')->mapWithKeys(fn ($id) => [$id => $schedule->checklists->find($id)->category->name . ' - ' . ($schedule->checklists->find($id)->instructions ?: 'No instructions')])->toArray(),
-            'checklist_items' => $checklists->mapWithKeys(fn ($checklist) => [$checklist->id => $checklist->items->map(fn ($item): array => [
+            'checklist_items' => $schedule->checklist->items->map(fn ($item): array => [
                 'id' => $item->getKey(),
                 'task' => $item->task,
                 'input_label' => $item->input_label,
-            ])->toArray()])->toArray(),
+            ])->toArray(),
         ];
     }
 
     /**
-     * @return array<int, Select|Repeater|Textarea>
+     * @return array<int, Repeater|Textarea>
      */
     public static function executionSchema(): array
     {
         return [
-            Select::make('checklist_id')
-                ->label('Checklist')
-                ->options(fn (Get $get): array => $get('checklists') ?? [])
-                ->required()
-                ->live()
-                ->reactive(),
             Repeater::make('items')
                 ->label('Checklist Items')
                 ->addable(false)
                 ->deletable(false)
                 ->reorderable(false)
                 ->collapsed(false)
-                ->default(fn (Get $get): array => $get('checklist_items.' . $get('checklist_id')) ?? [])
+                ->default(fn (Get $get): array => $get('checklist_items') ?? [])
                 ->schema([
                     Hidden::make('id')->required(),
                     Hidden::make('input_label'),

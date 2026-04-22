@@ -19,7 +19,7 @@ class PreventiveMaintenanceExecutionsRelationManager extends RelationManager
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query): Builder => $query
-                ->with(['performer', 'schedule.category', 'checklist.category'])
+                ->with(['performer', 'schedule.category', 'schedule.checklist', 'checklist.category'])
                 ->withCount([
                     'items',
                     'items as passed_items_count' => fn (Builder $itemQuery): Builder => $itemQuery->where('is_passed', true),

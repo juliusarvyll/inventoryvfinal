@@ -20,28 +20,23 @@ class PreventiveMaintenanceScheduleForm
                 ->preload()
                 ->required()
                 ->live(),
-            Select::make('checklist_ids')
-                ->label('Checklists')
-                ->options(fn () => \App\Models\PreventiveMaintenanceChecklist::with('category')
-                    ->get()
-                    ->mapWithKeys(fn ($checklist) => [
-                        $checklist->id => $checklist->category->name . ' - ' . ($checklist->instructions ?: 'No instructions'),
-                    ])
-                    ->toArray())
-                ->multiple()
+            Select::make('preventive_maintenance_checklist_id')
+                ->label('Checklist')
+                ->relationship('checklist', 'id')
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->category->name . ' - ' . ($record->instructions ?: 'No instructions'))
                 ->searchable()
                 ->preload()
                 ->required()
                 ->live()
                 ->afterStateUpdated(function ($state, callable $set) {
-                    if ($state && is_array($state) && count($state) > 0) {
-                        $checklist = \App\Models\PreventiveMaintenanceChecklist::find($state[0]);
+                    if ($state) {
+                        $checklist = \App\Models\PreventiveMaintenanceChecklist::find($state);
                         if ($checklist) {
                             $set('category_id', $checklist->category_id);
                         }
                     }
                 })
-                ->helperText('Select one or more checklist templates to use for this schedule. Category will be auto-filled from the first checklist.'),
+                ->helperText('Select a checklist template to use for this schedule. Category will be auto-filled.'),
             DatePicker::make('scheduled_for')
                 ->label('Scheduled for')
                 ->helperText('Optional one-off date. Leave blank if not scheduled yet.'),

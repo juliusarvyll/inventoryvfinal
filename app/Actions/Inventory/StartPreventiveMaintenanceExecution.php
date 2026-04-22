@@ -31,7 +31,7 @@ class StartPreventiveMaintenanceExecution
         ?User $actor = null,
         ?string $generalNotes = null,
     ): PreventiveMaintenanceExecution {
-        $schedule->loadMissing('checklists.items', 'location', 'category');
+        $schedule->loadMissing('checklist.items', 'location', 'category');
         $checklist->loadMissing('items', 'category');
 
         if ($schedule->location_id !== $asset->location_id) {
@@ -42,7 +42,7 @@ class StartPreventiveMaintenanceExecution
             throw new RuntimeException('The selected preventive maintenance checklist does not match the asset category.');
         }
 
-        if (! $schedule->checklists->contains($checklist)) {
+        if ($schedule->preventive_maintenance_checklist_id !== $checklist->id) {
             throw new RuntimeException('The selected checklist is not associated with this schedule.');
         }
 
