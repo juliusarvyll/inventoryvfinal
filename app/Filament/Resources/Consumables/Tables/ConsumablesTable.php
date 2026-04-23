@@ -6,7 +6,7 @@ use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
 use App\Filament\Actions\ChangeLocationBulkAction;
 use App\Filament\Actions\ChangeSupplierBulkAction;
-use App\Filament\Actions\ExportCsvAction;
+use App\Filament\Actions\ExportPdfAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -88,7 +88,7 @@ class ConsumablesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                ExportCsvAction::make(),
+                ExportPdfAction::make(),
                 BulkActionGroup::make([
                     ChangeCategoryBulkAction::make(InventoryCategoryType::Consumable, 'consumables'),
                     ChangeLocationBulkAction::make('consumables'),
@@ -96,6 +96,6 @@ class ConsumablesTable
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['category', 'supplier', 'location']));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category', 'supplier', 'location']));
     }
 }

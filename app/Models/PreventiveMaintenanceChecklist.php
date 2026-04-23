@@ -18,7 +18,6 @@ class PreventiveMaintenanceChecklist extends Model
      */
     protected $fillable = [
         'category_id',
-        'instructions',
         'is_active',
         'created_by',
         'updated_by',

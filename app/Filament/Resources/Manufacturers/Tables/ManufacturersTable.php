@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Manufacturers\Tables;
 
-use App\Filament\Actions\ExportCsvAction;
+use App\Filament\Actions\ExportPdfAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -51,7 +51,7 @@ class ManufacturersTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                ExportCsvAction::make(),
+                ExportPdfAction::make(),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

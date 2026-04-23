@@ -2,14 +2,12 @@
 
 namespace App\Filament\Resources\PreventiveMaintenanceSchedules\Schemas;
 
-use App\Models\PreventiveMaintenanceChecklist;
 use App\Models\PreventiveMaintenanceSchedule;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 
 class PreventiveMaintenanceExecutionForm
@@ -20,7 +18,7 @@ class PreventiveMaintenanceExecutionForm
     public static function executionFormData(PreventiveMaintenanceSchedule $schedule): array
     {
         $schedule->loadMissing('checklist.items');
-        
+
         return [
             'checklist_items' => $schedule->checklist->items->map(fn ($item): array => [
                 'id' => $item->getKey(),
@@ -45,10 +43,8 @@ class PreventiveMaintenanceExecutionForm
                 ->default(fn (Get $get): array => $get('checklist_items') ?? [])
                 ->schema([
                     Hidden::make('id')->required(),
-                    Hidden::make('input_label'),
                     Textarea::make('task')->disabled()->dehydrated(false)->rows(2)->columnSpanFull(),
                     Select::make('is_passed')->label('Result')->options(['1' => 'Pass', '0' => 'Fail'])->placeholder('Pending'),
-                    TextInput::make('input_value')->label(fn (Get $get) => (string) $get('input_label'))->visible(fn (Get $get) => filled($get('input_label'))),
                     FileUpload::make('evidence_path')->label('Evidence')->disk('public')->directory('preventive-maintenance/evidence')->visibility('public')->acceptedFileTypes(['image/*', 'application/pdf'])->maxSize(5120)->columnSpanFull(),
                 ])->columnSpanFull(),
             Textarea::make('general_notes')->label('General notes')->rows(4)->columnSpanFull(),

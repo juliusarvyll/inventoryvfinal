@@ -19,7 +19,6 @@ class PreventiveMaintenanceSchedule extends Model
      */
     protected $fillable = [
         'location_id',
-        'preventive_maintenance_checklist_id',
         'scheduled_for',
         'is_active',
         'created_by',
@@ -39,26 +38,11 @@ class PreventiveMaintenanceSchedule extends Model
         return $this->belongsTo(Location::class);
     }
 
-    public function category(): BelongsTo
+    public function checklists(): BelongsToMany
     {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
-
-    public function getCategoryAttribute(): ?int
-    {
-        return $this->checklist?->category_id ?? null;
-    }
-
-    public function checklist(): BelongsTo
-    {
-        return $this->belongsTo(PreventiveMaintenanceChecklist::class, 'preventive_maintenance_checklist_id');
-    }
-
-    public function assets(): HasMany
-    {
-        return $this->hasMany(Asset::class)
-            ->where('location_id', $this->location_id)
-            ->where('category_id', $this->category);
+        return $this->belongsToMany(PreventiveMaintenanceChecklist::class, 'preventive_maintenance_schedule_checklist')
+            ->with('category')
+            ->withTimestamps();
     }
 
     public function executions(): HasMany

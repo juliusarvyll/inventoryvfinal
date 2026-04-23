@@ -20,9 +20,6 @@ class PreventiveMaintenanceChecklistsRelationManager extends RelationManager
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('instructions')
-                    ->limit(40)
-                    ->tooltip(fn (?string $state): ?string => $state),
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),

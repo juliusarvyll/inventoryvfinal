@@ -10,6 +10,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PreventiveMaintenanceSchedulesRelationManager extends RelationManager
 {
@@ -19,16 +20,18 @@ class PreventiveMaintenanceSchedulesRelationManager extends RelationManager
     {
         return $table
             ->defaultSort('scheduled_for', 'desc')
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['checklists.category']))
             ->columns([
-                TextColumn::make('category.name')
-                    ->label('Category')
+                TextColumn::make('categories')
+                    ->label('Categories')
                     ->badge()
                     ->searchable()
-                    ->sortable(),
-                TextColumn::make('checklist.category.name')
-                    ->label('Checklist')
-                    ->badge()
-                    ->searchable(),
+                    ->getStateUsing(fn ($record) => $record->checklists->pluck('category.name')->unique()->join(', ')),
+                TextColumn::make('checklists_count')
+                    ->label('Checklists')
+                    ->numeric()
+                    ->sortable()
+                    ->getStateUsing(fn ($record) => $record->checklists->count()),
                 TextColumn::make('scheduled_for')
                     ->label('Scheduled')
                     ->date()

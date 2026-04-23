@@ -31,7 +31,7 @@ class StartPreventiveMaintenanceExecution
         ?User $actor = null,
         ?string $generalNotes = null,
     ): PreventiveMaintenanceExecution {
-        $schedule->loadMissing('checklist.items', 'location', 'category');
+        $schedule->loadMissing('checklists.items', 'location');
         $checklist->loadMissing('items', 'category');
 
         if ($schedule->location_id !== $asset->location_id) {
@@ -42,7 +42,7 @@ class StartPreventiveMaintenanceExecution
             throw new RuntimeException('The selected preventive maintenance checklist does not match the asset category.');
         }
 
-        if ($schedule->preventive_maintenance_checklist_id !== $checklist->id) {
+        if (! $schedule->checklists->contains($checklist)) {
             throw new RuntimeException('The selected checklist is not associated with this schedule.');
         }
 
@@ -57,7 +57,7 @@ class StartPreventiveMaintenanceExecution
                 'preventive_maintenance_schedule_id' => $schedule->getKey(),
                 'preventive_maintenance_checklist_id' => $checklist->getKey(),
                 'location_id' => $schedule->location_id,
-                'category_id' => $schedule->category,
+                'category_id' => $checklist->category_id,
                 'asset_id' => $asset->getKey(),
                 'status' => 'pending',
                 'scheduled_for' => $schedule->scheduled_for,
@@ -101,7 +101,6 @@ class StartPreventiveMaintenanceExecution
                     'asset_name' => $asset->name,
                     'location_name' => $schedule->location->name,
                     'category_name' => $checklist->category->name,
-                    'checklist_instructions' => $checklist->instructions,
                     'status' => $execution->status,
                     'items_count' => $execution->items->count(),
                     'passed_items' => $execution->items->where('is_passed', true)->count(),
@@ -112,7 +111,7 @@ class StartPreventiveMaintenanceExecution
                 'user_agent' => Request::userAgent(),
             ]);
 
-            return $execution->fresh(['asset', 'performer', 'schedule.location', 'schedule.category', 'checklist.category', 'items']);
+            return $execution->fresh(['asset', 'performer', 'schedule.location', 'schedule.checklists.category', 'checklist.category', 'items']);
         });
     }
 

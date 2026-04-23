@@ -2,48 +2,54 @@
 
 namespace App\Filament\Resources\PreventiveMaintenanceSchedules\Schemas;
 
-use App\Models\Location;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Database\Eloquent\Builder;
 
 class PreventiveMaintenanceScheduleForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components([
-            Select::make('location_id')
-                ->relationship('location', 'name')
-                ->searchable()
-                ->preload()
-                ->required()
-                ->live(),
-            Select::make('preventive_maintenance_checklist_id')
-                ->label('Checklist')
-                ->relationship('checklist', 'id')
-                ->getOptionLabelFromRecordUsing(fn ($record) => $record->category->name . ' - ' . ($record->instructions ?: 'No instructions'))
-                ->searchable()
-                ->preload()
-                ->required()
-                ->live()
-                ->afterStateUpdated(function ($state, callable $set) {
-                    if ($state) {
-                        $checklist = \App\Models\PreventiveMaintenanceChecklist::find($state);
-                        if ($checklist) {
-                            $set('category_id', $checklist->category_id);
-                        }
-                    }
-                })
-                ->helperText('Select a checklist template to use for this schedule. Category will be auto-filled.'),
-            DatePicker::make('scheduled_for')
-                ->label('Scheduled for')
-                ->helperText('Optional one-off date. Leave blank if not scheduled yet.'),
-            Toggle::make('is_active')
-                ->label('Active')
-                ->default(true)
-                ->required(),
-        ]);
+        return $schema
+            ->components([
+                Section::make('Schedule Scope')
+                    ->description('Choose where this schedule runs and when it should happen.')
+                    ->schema([
+                        Select::make('location_id')
+                            ->relationship('location', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live(),
+                        DatePicker::make('scheduled_for')
+                            ->label('Scheduled for')
+                            ->helperText('Optional one-off date. Leave blank if this schedule is run manually.'),
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true)
+                            ->required(),
+                    ])
+                    ->columns(2),
+                Section::make('Checklist Coverage')
+                    ->description('Attach one or more active checklist templates. Each checklist can represent a different category.')
+                    ->schema([
+                        Select::make('checklist_ids')
+                            ->label('Checklists')
+                            ->relationship(
+                                'checklists',
+                                'id',
+                                fn (Builder $query): Builder => $query->where('is_active', true),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record): string => $record->category?->name ?? 'No category')
+                            ->searchable()
+                            ->preload()
+                            ->multiple()
+                            ->required()
+                            ->helperText('Only active checklists are shown.'),
+                    ]),
+            ]);
     }
 }

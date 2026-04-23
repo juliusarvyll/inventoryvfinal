@@ -2,20 +2,27 @@
 
 namespace App\Filament\Resources\PreventiveMaintenanceSchedules\Tables;
 
-use App\Filament\Actions\ExportCsvAction;
-use App\Filament\Resources\PreventiveMaintenanceSchedules\Schemas\PreventiveMaintenanceExecutionForm;
+use App\Actions\Inventory\StartPreventiveMaintenanceExecution;
+use App\Filament\Actions\ExportPdfAction;
 use App\Models\Asset;
 use App\Models\PreventiveMaintenanceChecklist;
+use App\Models\PreventiveMaintenanceSchedule;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PreventiveMaintenanceSchedulesTable
 {
@@ -26,37 +33,47 @@ class PreventiveMaintenanceSchedulesTable
             ->columns([
                 TextColumn::make('location.name')
                     ->label('Location')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('checklist.category.name')
-                    ->label('Category')
                     ->badge()
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('checklist.instructions')
-                    ->label('Checklist')
-                    ->limit(50)
-                    ->tooltip(function ($record) {
-                        return $record->checklist?->instructions;
-                    })
+                TextColumn::make('categories')
+                    ->label('Categories')
+                    ->wrap()
+                    ->placeholder('No categories')
                     ->searchable()
-                    ->sortable(),
+                    ->getStateUsing(fn ($record) => $record->checklists->pluck('category.name')->unique()->join(', ')),
+                TextColumn::make('checklists_count')
+                    ->label('Checklists')
+                    ->numeric()
+                    ->badge()
+                    ->sortable()
+                    ->getStateUsing(fn ($record) => $record->checklists->count()),
                 TextColumn::make('scheduled_for')
                     ->label('Scheduled')
                     ->date()
+                    ->badge()
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('Not scheduled'),
                 TextColumn::make('executions_count')
                     ->label('Executions')
                     ->numeric()
+                    ->badge()
                     ->sortable(),
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
+                TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                TernaryFilter::make('is_active')
+                    ->label('Active'),
             ])
             ->headerActions([
                 CreateAction::make(),
@@ -67,76 +84,142 @@ class PreventiveMaintenanceSchedulesTable
                 Action::make('start')
                     ->label('Start Execution')
                     ->icon('heroicon-o-play')
+                    ->modalHeading('Start PM execution')
+                    ->modalDescription('Select the checklist and asset, then capture item-level results.')
+                    ->modalSubmitActionLabel('Start execution')
                     ->form(function ($record): array {
-                        $record->loadMissing('checklist.items', 'location');
-                        
-                        $checklistItems = $record->checklist->items->map(fn ($item): array => [
-                            'id' => $item->getKey(),
-                            'task' => $item->task,
-                            'input_label' => $item->input_label,
+                        $record->loadMissing(['checklists.category', 'checklists.items', 'location']);
+
+                        $checklistOptions = $record->checklists->mapWithKeys(fn ($checklist) => [
+                            $checklist->id => $checklist->category?->name ?? "Checklist #{$checklist->id}",
                         ])->toArray();
-                        
+
                         return [
-                            Select::make('asset_id')
-                                ->label('Asset')
-                                ->options(function () use ($record): array {
-                                    return Asset::query()
-                                        ->where('location_id', $record->location_id)
-                                        ->where('category_id', $record->category)
-                                        ->pluck('name', 'id')
-                                        ->toArray();
-                                })
-                                ->searchable()
-                                ->preload()
-                                ->required(),
-                            \Filament\Forms\Components\Repeater::make('items')
-                                ->label('Checklist Items')
-                                ->addable(false)
-                                ->deletable(false)
-                                ->reorderable(false)
-                                ->collapsed(false)
-                                ->default($checklistItems)
+                            Section::make('Execution Target')
                                 ->schema([
-                                    \Filament\Forms\Components\Hidden::make('id')
-                                        ->required(),
-                                    \Filament\Forms\Components\Hidden::make('input_label'),
-                                    \Filament\Forms\Components\Textarea::make('task')
-                                        ->disabled()
-                                        ->dehydrated(false)
-                                        ->rows(2)
-                                        ->columnSpanFull(),
-                                    \Filament\Forms\Components\Select::make('is_passed')
-                                        ->label('Result')
-                                        ->options([
-                                            '1' => 'Pass',
-                                            '0' => 'Fail',
-                                        ])
-                                        ->placeholder('Pending'),
-                                    \Filament\Forms\Components\TextInput::make('input_value')
-                                        ->label(fn (\Filament\Schemas\Components\Utilities\Get $get): string => (string) $get('input_label'))
-                                        ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => filled($get('input_label'))),
-                                    \Filament\Forms\Components\FileUpload::make('evidence_path')
-                                        ->label('Evidence')
-                                        ->disk('public')
-                                        ->directory('preventive-maintenance/evidence')
-                                        ->visibility('public')
-                                        ->acceptedFileTypes(['image/*', 'application/pdf'])
-                                        ->maxSize(5120)
-                                        ->columnSpanFull(),
+                                    Select::make('checklist_id')
+                                        ->label('Checklist')
+                                        ->options($checklistOptions)
+                                        ->searchable()
+                                        ->preload()
+                                        ->required()
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, callable $set) use ($record): void {
+                                            if (! $state) {
+                                                $set('items', []);
+
+                                                return;
+                                            }
+
+                                            $checklist = $record->checklists->find($state);
+                                            if (! $checklist) {
+                                                $set('items', []);
+
+                                                return;
+                                            }
+
+                                            $checklist->load('items');
+
+                                            $set('items', $checklist->items->map(fn ($item): array => [
+                                                'id' => $item->getKey(),
+                                                'task' => $item->task,
+                                            ])->toArray());
+                                        }),
+                                    Select::make('asset_id')
+                                        ->label('Asset')
+                                        ->options(function (callable $get) use ($record): array {
+                                            $checklistId = $get('checklist_id');
+                                            if (! $checklistId) {
+                                                return [];
+                                            }
+
+                                            $checklist = $record->checklists->find($checklistId);
+                                            if (! $checklist) {
+                                                return [];
+                                            }
+
+                                            return Asset::query()
+                                                ->where('location_id', $record->location_id)
+                                                ->where('category_id', $checklist->category_id)
+                                                ->orderBy('name')
+                                                ->pluck('name', 'id')
+                                                ->toArray();
+                                        })
+                                        ->searchable()
+                                        ->preload()
+                                        ->required()
+                                        ->live(),
                                 ])
-                                ->columnSpanFull(),
-                            \Filament\Forms\Components\Textarea::make('general_notes')
-                                ->label('General notes')
-                                ->rows(4)
-                                ->columnSpanFull(),
+                                ->columns(2),
+                            Section::make('Checklist Results')
+                                ->schema([
+                                    Repeater::make('items')
+                                        ->label('Checklist Items')
+                                        ->addable(false)
+                                        ->deletable(false)
+                                        ->reorderable(false)
+                                        ->collapsed(false)
+                                        ->reactive()
+                                        ->default(function (callable $get) use ($record): array {
+                                            $checklistId = $get('checklist_id');
+                                            if (! $checklistId) {
+                                                return [];
+                                            }
+
+                                            $checklist = $record->checklists->find($checklistId);
+                                            if (! $checklist) {
+                                                return [];
+                                            }
+
+                                            $checklist->load('items');
+
+                                            return $checklist->items->map(fn ($item): array => [
+                                                'id' => $item->getKey(),
+                                                'task' => $item->task,
+                                            ])->toArray();
+                                        })
+                                        ->schema([
+                                            Hidden::make('id')
+                                                ->required(),
+                                            Textarea::make('task')
+                                                ->disabled()
+                                                ->dehydrated(false)
+                                                ->rows(2)
+                                                ->columnSpanFull(),
+                                            Select::make('is_passed')
+                                                ->label('Result')
+                                                ->options([
+                                                    '1' => 'Pass',
+                                                    '0' => 'Fail',
+                                                ])
+                                                ->placeholder('Pending'),
+                                            FileUpload::make('evidence_path')
+                                                ->label('Evidence')
+                                                ->disk('public')
+                                                ->directory('preventive-maintenance/evidence')
+                                                ->visibility('public')
+                                                ->acceptedFileTypes(['image/*', 'application/pdf'])
+                                                ->maxSize(5120)
+                                                ->columnSpanFull(),
+                                        ])
+                                        ->columnSpanFull(),
+                                ]),
+                            Section::make('Completion Notes')
+                                ->schema([
+                                    Textarea::make('general_notes')
+                                        ->label('General notes')
+                                        ->rows(4)
+                                        ->columnSpanFull(),
+                                ]),
                         ];
                     })
-                    ->action(function (\App\Models\PreventiveMaintenanceSchedule $record, array $data): void {
-                        $asset = \App\Models\Asset::find($data['asset_id']);
-                        
-                        app(\App\Actions\Inventory\StartPreventiveMaintenanceExecution::class)(
+                    ->action(function (PreventiveMaintenanceSchedule $record, array $data): void {
+                        $asset = Asset::find($data['asset_id']);
+                        $checklist = PreventiveMaintenanceChecklist::find($data['checklist_id']);
+
+                        app(StartPreventiveMaintenanceExecution::class)(
                             schedule: $record,
-                            checklist: $record->checklist,
+                            checklist: $checklist,
                             asset: $asset,
                             items: $data['items'] ?? [],
                             actor: auth()->user(),
@@ -145,9 +228,11 @@ class PreventiveMaintenanceSchedulesTable
                     }),
             ])
             ->toolbarActions([
-                ExportCsvAction::make(),
+                ExportPdfAction::make(),
                 DeleteBulkAction::make(),
             ])
-            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['location', 'checklist.category']));
+            ->emptyStateHeading('No PM schedules yet')
+            ->emptyStateDescription('Create a schedule, attach checklist templates, then start executions from this table.')
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['location', 'checklists.category']));
     }
 }

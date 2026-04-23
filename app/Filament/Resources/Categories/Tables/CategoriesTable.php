@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Categories\Tables;
 
-use App\Filament\Actions\ExportCsvAction;
+use App\Filament\Actions\ExportPdfAction;
 use App\Filament\Actions\SetCategoryTypeBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -68,7 +68,7 @@ class CategoriesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                ExportCsvAction::make(),
+                ExportPdfAction::make(),
                 BulkActionGroup::make([
                     SetCategoryTypeBulkAction::make(),
                     DeleteBulkAction::make(),

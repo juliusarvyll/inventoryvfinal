@@ -2,14 +2,16 @@
 
 namespace App\Filament\Resources\PreventiveMaintenanceChecklists\Tables;
 
-use App\Filament\Actions\ExportCsvAction;
+use App\Filament\Actions\ExportPdfAction;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PreventiveMaintenanceChecklistsTable
 {
@@ -26,18 +28,23 @@ class PreventiveMaintenanceChecklistsTable
                 TextColumn::make('items_count')
                     ->label('Items')
                     ->numeric()
+                    ->badge()
                     ->sortable(),
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
-                TextColumn::make('instructions')
-                    ->limit(40)
-                    ->tooltip(fn (?string $state): ?string => $state)
-                    ->toggleable(),
+                TextColumn::make('creator.name')
+                    ->label('Created by')
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                TernaryFilter::make('is_active')
+                    ->label('Active'),
             ])
             ->headerActions([
                 CreateAction::make(),
@@ -47,9 +54,11 @@ class PreventiveMaintenanceChecklistsTable
                 DeleteAction::make(),
             ])
             ->toolbarActions([
-                ExportCsvAction::make(),
+                ExportPdfAction::make(),
                 DeleteBulkAction::make(),
             ])
-            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['category']));
+            ->emptyStateHeading('No PM checklists yet')
+            ->emptyStateDescription('Create your first checklist template per category to standardize preventive maintenance checks.')
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category']));
     }
 }

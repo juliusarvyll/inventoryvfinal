@@ -4,7 +4,7 @@ namespace App\Filament\Resources\ItemRequests\Tables;
 
 use App\Actions\Inventory\ApproveItemRequest;
 use App\Enums\ItemRequestStatus;
-use App\Filament\Actions\ExportCsvAction;
+use App\Filament\Actions\ExportPdfAction;
 use App\Filament\Actions\SetItemRequestStatusBulkAction;
 use App\Models\Accessory;
 use App\Models\Asset;
@@ -122,12 +122,12 @@ class ItemRequestsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                ExportCsvAction::make(),
+                ExportPdfAction::make(),
                 BulkActionGroup::make([
                     SetItemRequestStatusBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['handler', 'user']));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['handler', 'user']));
     }
 }
