@@ -31,22 +31,22 @@ final class ChangeSupplierBulkAction
                     ->placeholder('None'),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records): void {
-                $supplierId = $this->getData()['supplier_id'] ?? null;
+            ->action(function (BulkAction $action, Collection $records, array $data): void {
+                $supplierId = $data['supplier_id'] ?? null;
 
                 $supplier = filled($supplierId)
                     ? Supplier::query()->whereKey($supplierId)->first()
                     : null;
 
                 if (filled($supplierId) && ! $supplier) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof Model) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
@@ -60,11 +60,11 @@ final class ChangeSupplierBulkAction
 
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $this->success();
+                $action->success();
             })
             ->deselectRecordsAfterCompletion();
     }

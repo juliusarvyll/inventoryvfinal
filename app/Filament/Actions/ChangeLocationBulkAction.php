@@ -31,22 +31,22 @@ final class ChangeLocationBulkAction
                     ->placeholder('Unassigned'),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records): void {
-                $locationId = $this->getData()['location_id'] ?? null;
+            ->action(function (BulkAction $action, Collection $records, array $data): void {
+                $locationId = $data['location_id'] ?? null;
 
                 $location = filled($locationId)
                     ? Location::query()->whereKey($locationId)->first()
                     : null;
 
                 if (filled($locationId) && ! $location) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof Model) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
@@ -60,11 +60,11 @@ final class ChangeLocationBulkAction
 
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $this->success();
+                $action->success();
             })
             ->deselectRecordsAfterCompletion();
     }

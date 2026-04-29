@@ -20,12 +20,9 @@ class AccessoryFactory extends Factory
             'category_id' => Category::factory()->accessory(),
             'supplier_id' => Supplier::factory(),
             'location_id' => Location::factory(),
-            'qty' => fake()->numberBetween(2, 50),
-            'min_qty' => fake()->numberBetween(0, 5),
-            'model_number' => fake()->bothify('ACC-###'),
+            'serial' => fake()->boolean(70) ? fake()->unique()->bothify('ACC-####') : null,
             'purchase_cost' => fake()->randomFloat(2, 10, 300),
             'purchase_date' => fake()->dateTimeBetween('-2 years', 'now'),
-            'order_number' => fake()->bothify('PO-####'),
             'requestable' => true,
             'notes' => fake()->optional()->sentence(),
         ];

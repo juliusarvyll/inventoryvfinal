@@ -21,6 +21,7 @@ class ExpiringLicensesWidget extends TableWidget
         return $table
             ->query(fn (): Builder => License::query()
                 ->with('manufacturer')
+                ->withCount('licenseSeats')
                 ->whereDate('expiration_date', '>=', Carbon::today())
                 ->whereDate('expiration_date', '<=', Carbon::today()->addDays(30))
                 ->orderBy('expiration_date'))

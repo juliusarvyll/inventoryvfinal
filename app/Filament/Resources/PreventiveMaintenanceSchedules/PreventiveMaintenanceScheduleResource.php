@@ -36,7 +36,7 @@ class PreventiveMaintenanceScheduleResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['location', 'checklists.category', 'creator', 'updater'])->withCount('executions');
+        return parent::getEloquentQuery()->with(['location', 'checklists.categories', 'creator', 'updater'])->withCount('executions');
     }
 
     public static function form(Schema $schema): Schema

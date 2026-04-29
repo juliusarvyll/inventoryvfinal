@@ -18,13 +18,13 @@ class PreventiveMaintenanceChecklistsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort('category_id')
+            ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('category.name')
-                    ->label('Category')
+                TextColumn::make('categories')
+                    ->label('Categories')
                     ->badge()
                     ->searchable()
-                    ->sortable(),
+                    ->getStateUsing(fn ($record) => $record->categories->pluck('name')->unique()->join(', ')),
                 TextColumn::make('items_count')
                     ->label('Items')
                     ->numeric()
@@ -58,7 +58,7 @@ class PreventiveMaintenanceChecklistsTable
                 DeleteBulkAction::make(),
             ])
             ->emptyStateHeading('No PM checklists yet')
-            ->emptyStateDescription('Create your first checklist template per category to standardize preventive maintenance checks.')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category']));
+            ->emptyStateDescription('Create your first checklist template and share it across one or more categories.')
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['categories']));
     }
 }

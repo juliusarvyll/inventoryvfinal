@@ -1,43 +1,74 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
-use App\Enums\ItemRequestStatus;
-use App\Enums\UserRole;
 use App\Models\ItemRequest;
-use App\Models\User;
+use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class ItemRequestPolicy
 {
-    public function viewAny(User $user): bool
+    use HandlesAuthorization;
+
+    public function viewAny(AuthUser $authUser): bool
     {
-        return true;
+        return $authUser->can('ViewAny:ItemRequest');
     }
 
-    public function view(User $user, ItemRequest $itemRequest): bool
+    public function view(AuthUser $authUser, ItemRequest $itemRequest): bool
     {
-        return $user->hasAnyRole([UserRole::Admin, UserRole::ItStaff])
-            || $itemRequest->user_id === $user->getKey();
+        return $authUser->can('View:ItemRequest');
     }
 
-    public function create(User $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->is_active;
+        return $authUser->can('Create:ItemRequest');
     }
 
-    public function update(User $user, ItemRequest $itemRequest): bool
+    public function update(AuthUser $authUser, ItemRequest $itemRequest): bool
     {
-        return $user->hasAnyRole([UserRole::Admin, UserRole::ItStaff]);
+        return $authUser->can('Update:ItemRequest');
     }
 
-    public function delete(User $user, ItemRequest $itemRequest): bool
+    public function delete(AuthUser $authUser, ItemRequest $itemRequest): bool
     {
-        return $itemRequest->user_id === $user->getKey()
-            && $itemRequest->status === ItemRequestStatus::Pending;
+        return $authUser->can('Delete:ItemRequest');
     }
 
-    public function deleteAny(User $user): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('DeleteAny:ItemRequest');
+    }
+
+    public function restore(AuthUser $authUser, ItemRequest $itemRequest): bool
+    {
+        return $authUser->can('Restore:ItemRequest');
+    }
+
+    public function forceDelete(AuthUser $authUser, ItemRequest $itemRequest): bool
+    {
+        return $authUser->can('ForceDelete:ItemRequest');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:ItemRequest');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:ItemRequest');
+    }
+
+    public function replicate(AuthUser $authUser, ItemRequest $itemRequest): bool
+    {
+        return $authUser->can('Replicate:ItemRequest');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:ItemRequest');
     }
 }

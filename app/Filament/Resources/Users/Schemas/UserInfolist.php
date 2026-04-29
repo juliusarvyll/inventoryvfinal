@@ -47,8 +47,11 @@ class UserInfolist
                     ->placeholder('-'),
                 IconEntry::make('is_active')
                     ->boolean(),
-                TextEntry::make('role')
-                    ->badge(),
+                TextEntry::make('roles.name')
+                    ->label('Shield roles')
+                    ->badge()
+                    ->separator(', ')
+                    ->placeholder('-'),
             ]);
     }
 }

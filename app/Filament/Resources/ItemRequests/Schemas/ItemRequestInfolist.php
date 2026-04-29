@@ -11,17 +11,31 @@ class ItemRequestInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('requester_display_name')
-                    ->label('Requester'),
-                TextEntry::make('requestable_display_name')
-                    ->label('Asset'),
-                TextEntry::make('status')
-                    ->badge(),
+                TextEntry::make('requested_by')
+                    ->label('Requested By')
+                    ->placeholder('-'),
+                TextEntry::make('department')
+                    ->placeholder('-'),
+                TextEntry::make('items')
+                    ->columnSpanFull()
+                    ->placeholder('-'),
                 TextEntry::make('qty')
                     ->numeric(),
-                TextEntry::make('reason')
+                TextEntry::make('unit_cost')
+                    ->money('USD')
+                    ->placeholder('-'),
+                TextEntry::make('source_of_fund')
+                    ->label('Source of Fund')
+                    ->placeholder('-'),
+                TextEntry::make('purpose_project')
+                    ->label('Purpose Project')
                     ->placeholder('-')
                     ->columnSpanFull(),
+                TextEntry::make('remarks')
+                    ->placeholder('-')
+                    ->columnSpanFull(),
+                TextEntry::make('status')
+                    ->badge(),
                 TextEntry::make('deny_reason')
                     ->placeholder('-')
                     ->columnSpanFull(),

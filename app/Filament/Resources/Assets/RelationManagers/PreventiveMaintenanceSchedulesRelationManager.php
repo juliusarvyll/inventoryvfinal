@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Assets\RelationManagers;
 
 use App\Actions\Inventory\StartPreventiveMaintenanceExecution;
 use App\Models\PreventiveMaintenanceChecklist;
-use App\Models\PreventiveMaintenanceExecution;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -25,14 +24,14 @@ class PreventiveMaintenanceSchedulesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['checklists.category']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['checklists.categories']))
             ->defaultSort('scheduled_for', 'desc')
             ->columns([
                 TextColumn::make('categories')
                     ->label('Categories')
                     ->badge()
                     ->searchable()
-                    ->getStateUsing(fn ($record) => $record->checklists->pluck('category.name')->unique()->join(', ')),
+                    ->getStateUsing(fn ($record) => $record->checklists->flatMap(fn ($checklist) => $checklist->categories->pluck('name'))->unique()->join(', ')),
                 TextColumn::make('checklists_count')
                     ->label('Checklists')
                     ->numeric()
@@ -52,16 +51,16 @@ class PreventiveMaintenanceSchedulesRelationManager extends RelationManager
                     ->label('Start preventive maintenance')
                     ->icon('heroicon-o-play')
                     ->color('success')
-                    ->visible(fn ($record): bool => auth()->user()?->can('create', PreventiveMaintenanceExecution::class) ?? false && $record->checklists->pluck('category_id')->contains($this->getOwnerRecord()->category_id))
+                    ->visible(fn ($record): bool => (auth()->user()?->can('Create:PreventiveMaintenanceExecution') ?? false) && $record->checklists->contains(fn ($checklist) => $checklist->categories->contains('id', $this->getOwnerRecord()->category_id)))
                     ->modalWidth('5xl')
                     ->modalHeading('Start Preventive Maintenance')
                     ->form(function ($record): array {
-                        $record->loadMissing(['checklists.category', 'checklists.items']);
+                        $record->loadMissing(['checklists.categories', 'checklists.items']);
 
                         $checklistOptions = $record->checklists
-                            ->filter(fn ($checklist) => $checklist->category_id === $this->getOwnerRecord()->category_id)
+                            ->filter(fn ($checklist) => $checklist->categories->contains('id', $this->getOwnerRecord()->category_id))
                             ->mapWithKeys(fn ($checklist) => [
-                                $checklist->id => $checklist->category->name,
+                                $checklist->id => $checklist->categories->pluck('name')->unique()->join(', '),
                             ])->toArray();
 
                         return [

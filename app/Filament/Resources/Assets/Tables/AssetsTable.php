@@ -32,15 +32,22 @@ class AssetsTable
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('assetModel.name')
-                    ->searchable(),
+                    ->label('Asset Model')
+                    ->searchable()
+                    ->getStateUsing(fn ($record) => $record->assetModel ? $record->assetModel->name : 'Deleted'),
                 TextColumn::make('category.name')
-                    ->searchable(),
+                    ->label('Category')
+                    ->searchable()
+                    ->getStateUsing(fn ($record) => $record->category ? $record->category->name : 'Deleted'),
                 TextColumn::make('statusLabel.name')
-                    ->searchable(),
+                    ->label('Status')
+                    ->searchable()
+                    ->getStateUsing(fn ($record) => $record->statusLabel ? $record->statusLabel->name : 'Deleted'),
                 TextColumn::make('activeCheckout.assignee.name')
                     ->label('Assigned to')
                     ->placeholder('-')
-                    ->searchable(),
+                    ->searchable()
+                    ->getStateUsing(fn ($record) => $record->activeCheckout?->assignee ? $record->activeCheckout->assignee->name : 'Unassigned'),
                 TextColumn::make('activeCheckout.assigned_at')
                     ->label('Checked out')
                     ->dateTime()
@@ -48,9 +55,13 @@ class AssetsTable
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('supplier.name')
-                    ->searchable(),
+                    ->label('Supplier')
+                    ->searchable()
+                    ->getStateUsing(fn ($record) => $record->supplier ? $record->supplier->name : 'Deleted'),
                 TextColumn::make('location.name')
-                    ->searchable(),
+                    ->label('Location')
+                    ->searchable()
+                    ->getStateUsing(fn ($record) => $record->location ? $record->location->name : 'Deleted'),
                 TextColumn::make('serial')
                     ->searchable(),
                 TextColumn::make('purchase_cost')

@@ -52,17 +52,17 @@ class Category extends Model
 
     public function accessories(): HasMany
     {
-        return $this->hasMany(Accessory::class);
+        return $this->assets();
     }
 
     public function consumables(): HasMany
     {
-        return $this->hasMany(Consumable::class);
+        return $this->assets();
     }
 
     public function components(): HasMany
     {
-        return $this->hasMany(Component::class);
+        return $this->assets();
     }
 
     public function preventiveMaintenances(): BelongsToMany
@@ -71,8 +71,9 @@ class Category extends Model
             ->withTimestamps();
     }
 
-    public function preventiveMaintenanceChecklists(): HasMany
+    public function preventiveMaintenanceChecklists(): BelongsToMany
     {
-        return $this->hasMany(PreventiveMaintenanceChecklist::class);
+        return $this->belongsToMany(PreventiveMaintenanceChecklist::class, 'category_preventive_maintenance_checklist')
+            ->withTimestamps();
     }
 }

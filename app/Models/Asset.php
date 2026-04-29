@@ -105,8 +105,11 @@ class Asset extends Model
 
     public function preventiveMaintenanceSchedules(): HasMany
     {
+        $locationIds = $this->location?->selfAndAncestorIds() ?? ($this->location_id ? [(int) $this->location_id] : []);
+
         return $this->hasMany(PreventiveMaintenanceSchedule::class, 'location_id', 'location_id')
-            ->where('category_id', $this->category_id);
+            ->whereIn('location_id', $locationIds === [] ? [0] : $locationIds)
+            ->whereHas('checklists.categories', fn ($query) => $query->whereKey($this->category_id));
     }
 
     public function preventiveMaintenanceExecutions(): HasMany

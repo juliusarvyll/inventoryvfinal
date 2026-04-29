@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\LicenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use RuntimeException;
 
 class License extends Model
 {
-    /** @use HasFactory<\Database\Factories\LicenseFactory> */
+    /** @use HasFactory<LicenseFactory> */
     use HasFactory;
 
     /**
@@ -61,6 +62,12 @@ class License extends Model
 
     public function assignedSeatsCount(): int
     {
+        $loadedCount = $this->getAttribute('license_seats_count');
+
+        if ($loadedCount !== null) {
+            return (int) $loadedCount;
+        }
+
         return $this->licenseSeats()->count();
     }
 

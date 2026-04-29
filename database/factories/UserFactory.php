@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends Factory<User>
@@ -37,7 +37,6 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'is_active' => true,
             'password' => static::$password ??= Hash::make('password'),
-            'role' => UserRole::EndUser,
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
@@ -69,15 +68,19 @@ class UserFactory extends Factory
 
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => UserRole::Admin,
-        ]);
+        return $this->afterCreating(function (User $user): void {
+            Role::findOrCreate('super_admin', 'web');
+
+            $user->syncRoles(['super_admin']);
+        });
     }
 
     public function itStaff(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => UserRole::ItStaff,
-        ]);
+        return $this->afterCreating(function (User $user): void {
+            Role::findOrCreate('panel_user', 'web');
+
+            $user->syncRoles(['panel_user']);
+        });
     }
 }

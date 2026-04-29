@@ -13,7 +13,6 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -33,15 +32,9 @@ class ConsumablesTable
                     ->searchable(),
                 TextColumn::make('location.name')
                     ->searchable(),
-                TextColumn::make('qty')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('min_qty')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('model_number')
+                TextColumn::make('asset_tag')
                     ->searchable(),
-                TextColumn::make('item_no')
+                TextColumn::make('serial')
                     ->searchable(),
                 TextColumn::make('purchase_cost')
                     ->money()
@@ -49,8 +42,6 @@ class ConsumablesTable
                 TextColumn::make('purchase_date')
                     ->date()
                     ->sortable(),
-                TextColumn::make('order_number')
-                    ->searchable(),
                 IconColumn::make('requestable')
                     ->boolean(),
                 TextColumn::make('created_at')
@@ -79,9 +70,6 @@ class ConsumablesTable
                     ->searchable()
                     ->preload(),
                 TernaryFilter::make('requestable'),
-                Filter::make('low_stock')
-                    ->label('Low Stock')
-                    ->query(fn (Builder $query): Builder => $query->whereColumn('qty', '<=', 'min_qty')),
             ])
             ->recordActions([
                 ViewAction::make(),

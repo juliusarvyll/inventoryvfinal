@@ -4,9 +4,10 @@ namespace App\Filament\Admin\Widgets;
 
 use App\Enums\ItemRequestStatus;
 use App\Models\Accessory;
-use App\Models\AccessoryCheckout;
 use App\Models\Asset;
 use App\Models\AssetCheckout;
+use App\Models\Component;
+use App\Models\Consumable;
 use App\Models\ItemRequest;
 use App\Models\License;
 use App\Models\LicenseSeat;
@@ -36,6 +37,7 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
             : 0;
 
         $totalSeats = (int) License::query()->sum('seats');
+        $totalLicenses = License::query()->count();
         $usedSeats = LicenseSeat::query()->count();
         $seatUtilization = $totalSeats > 0
             ? (int) round(($usedSeats / $totalSeats) * 100)
@@ -44,11 +46,9 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
             ->whereDate('expiration_date', '>=', $today)
             ->whereDate('expiration_date', '<=', $today->copy()->addDays(30))
             ->count();
-        $accessoryStock = (int) Accessory::query()->sum('qty');
-        $checkedOutAccessories = (int) AccessoryCheckout::query()
-            ->whereNull('returned_at')
-            ->sum('qty');
-        $accessoriesRemaining = max(0, $accessoryStock - $checkedOutAccessories);
+        $accessoryAssets = Accessory::query()->count();
+        $consumableAssets = Consumable::query()->count();
+        $componentAssets = Component::query()->count();
         $requestCounts = ItemRequest::query()
             ->selectRaw('status, count(*) as aggregate')
             ->groupBy('status')
@@ -72,11 +72,11 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
                 ->color('success'),
             Stat::make('Expiring Licenses', number_format($expiringLicenses))
                 ->description('Licenses ending within the next 30 days')
-                ->chart([$expiringLicenses, max(0, License::query()->count() - $expiringLicenses)])
+                ->chart([$expiringLicenses, max(0, $totalLicenses - $expiringLicenses)])
                 ->color($expiringLicenses > 0 ? 'danger' : 'success'),
-            Stat::make('Accessories Remaining', number_format($accessoriesRemaining))
-                ->description("{$checkedOutAccessories} currently checked out")
-                ->chart([$accessoriesRemaining, $checkedOutAccessories])
+            Stat::make('Catalog Inventory', number_format($accessoryAssets + $consumableAssets + $componentAssets))
+                ->description("{$accessoryAssets} accessories - {$consumableAssets} consumables - {$componentAssets} components")
+                ->chart([$accessoryAssets, $consumableAssets, $componentAssets])
                 ->color('warning'),
             Stat::make('Requests Pipeline', number_format($pendingRequests))
                 ->description("{$approvedRequests} approved - {$fulfilledRequests} fulfilled")

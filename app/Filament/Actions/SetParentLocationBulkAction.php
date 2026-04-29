@@ -6,7 +6,6 @@ use App\Models\Location;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 final class SetParentLocationBulkAction
@@ -31,28 +30,28 @@ final class SetParentLocationBulkAction
                     ->placeholder('None (root)'),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records): void {
-                $parentId = $this->getData()['parent_id'] ?? null;
+            ->action(function (BulkAction $action, Collection $records, array $data): void {
+                $parentId = $data['parent_id'] ?? null;
 
                 $parent = filled($parentId)
                     ? Location::query()->whereKey($parentId)->first()
                     : null;
 
                 if (filled($parentId) && ! $parent) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof Location) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
 
                     if ($parent && (int) $parent->getKey() === (int) $record->getKey()) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
@@ -66,11 +65,11 @@ final class SetParentLocationBulkAction
 
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $this->success();
+                $action->success();
             })
             ->deselectRecordsAfterCompletion();
     }

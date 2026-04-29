@@ -36,7 +36,7 @@ class PreventiveMaintenanceChecklistResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'creator', 'updater'])->withCount('items');
+        return parent::getEloquentQuery()->with(['categories', 'creator', 'updater'])->withCount('items');
     }
 
     public static function form(Schema $schema): Schema

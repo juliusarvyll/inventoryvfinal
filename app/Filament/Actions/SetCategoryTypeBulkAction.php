@@ -8,6 +8,7 @@ use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 final class SetCategoryTypeBulkAction
 {
@@ -22,17 +23,17 @@ final class SetCategoryTypeBulkAction
                 Select::make('type')
                     ->label('Type')
                     ->options(collect(InventoryCategoryType::cases())
-                        ->mapWithKeys(fn (InventoryCategoryType $case): array => [$case->value => \Illuminate\Support\Str::headline($case->value)])
+                        ->mapWithKeys(fn (InventoryCategoryType $case): array => [$case->value => Str::headline($case->value)])
                         ->all())
                     ->required()
                     ->native(false),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records): void {
-                $typeValue = $this->getData()['type'] ?? null;
+            ->action(function (BulkAction $action, Collection $records, array $data): void {
+                $typeValue = $data['type'] ?? null;
 
                 if (blank($typeValue)) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
@@ -40,14 +41,14 @@ final class SetCategoryTypeBulkAction
                 try {
                     $type = InventoryCategoryType::from((string) $typeValue);
                 } catch (\ValueError) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof Category) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
@@ -56,11 +57,11 @@ final class SetCategoryTypeBulkAction
                         $record->type = $type;
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $this->success();
+                $action->success();
             })
             ->deselectRecordsAfterCompletion();
     }

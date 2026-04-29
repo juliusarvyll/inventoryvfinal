@@ -30,13 +30,9 @@ class AccessoriesTable
                     ->searchable(),
                 TextColumn::make('location.name')
                     ->searchable(),
-                TextColumn::make('qty')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('min_qty')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('model_number')
+                TextColumn::make('asset_tag')
+                    ->searchable(),
+                TextColumn::make('serial')
                     ->searchable(),
                 TextColumn::make('purchase_cost')
                     ->money()
@@ -44,8 +40,6 @@ class AccessoriesTable
                 TextColumn::make('purchase_date')
                     ->date()
                     ->sortable(),
-                TextColumn::make('order_number')
-                    ->searchable(),
                 IconColumn::make('requestable')
                     ->boolean(),
                 TextColumn::make('created_at')

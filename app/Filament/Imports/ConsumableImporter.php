@@ -58,25 +58,9 @@ class ConsumableImporter extends Importer
                 ->fillRecordUsing(fn (): null => null)
                 ->ignoreBlankState()
                 ->rules(['nullable', 'max:255']),
-            ImportColumn::make('qty')
-                ->label('Quantity')
-                ->guess(['Qty', 'Quantity'])
-                ->numeric()
-                ->rules(['required', 'numeric', 'min:0']),
-            ImportColumn::make('min_qty')
-                ->label('Minimum Quantity')
-                ->guess(['Min Qty', 'Minimum Quantity', 'Minimum Qty'])
-                ->numeric()
-                ->helperText('Optional. Defaults to 0.')
-                ->rules(['required', 'numeric', 'min:0']),
-            ImportColumn::make('model_number')
-                ->label('Model Number')
-                ->guess(['Model Number', 'Model No', 'Model #'])
-                ->ignoreBlankState()
-                ->rules(['nullable', 'max:255']),
-            ImportColumn::make('item_no')
-                ->label('Item Number')
-                ->guess(['Item No', 'Item Number', 'SKU'])
+            ImportColumn::make('serial')
+                ->label('Serial')
+                ->guess(['Serial', 'Serial Number', 'Model Number', 'Model No', 'Model #'])
                 ->ignoreBlankState()
                 ->rules(['nullable', 'max:255']),
             ImportColumn::make('purchase_cost')
@@ -90,11 +74,6 @@ class ConsumableImporter extends Importer
                 ->guess(['Purchase Date'])
                 ->ignoreBlankState()
                 ->rules(['nullable', 'date']),
-            ImportColumn::make('order_number')
-                ->label('Order Number')
-                ->guess(['Order Number', 'PO Number'])
-                ->ignoreBlankState()
-                ->rules(['nullable', 'max:255']),
             ImportColumn::make('requestable')
                 ->label('Requestable')
                 ->guess(['Requestable'])
@@ -114,9 +93,9 @@ class ConsumableImporter extends Importer
 
         $category = $this->resolveCategory();
 
-        if (filled($this->data['item_no'] ?? null)) {
+        if (filled($this->data['serial'] ?? null)) {
             $existingRecord = Consumable::query()
-                ->where('item_no', $this->data['item_no'])
+                ->where('serial', $this->data['serial'])
                 ->first();
 
             if ($existingRecord) {
@@ -128,17 +107,13 @@ class ConsumableImporter extends Importer
             ->where('name', $this->data['name'])
             ->where('category_id', $category->getKey());
 
-        if (filled($this->data['model_number'] ?? null)) {
-            $query->where('model_number', $this->data['model_number']);
-        }
-
         $existingRecord = $query->first();
 
         if ($existingRecord) {
             return $existingRecord;
         }
 
-        return new Consumable();
+        return new Consumable;
     }
 
     public function getValidationMessages(): array
@@ -146,8 +121,6 @@ class ConsumableImporter extends Importer
         return [
             'name.required' => 'The consumable name column is required. This row will be skipped.',
             'category.required' => 'The category could not be determined. This row will be skipped.',
-            'qty.required' => 'The quantity column is required. This row will be skipped.',
-            'min_qty.required' => 'The minimum quantity could not be determined. This row will be skipped.',
             'requestable.required' => 'The requestable value could not be determined. This row will be skipped.',
         ];
     }
@@ -171,10 +144,10 @@ class ConsumableImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Your consumable import has completed and ' . Number::format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
+        $body = 'Your consumable import has completed and '.Number::format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' Import completed with warnings: ' . Number::format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' were skipped because of missing or invalid data.';
+            $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
         }
 
         return $body;
@@ -187,14 +160,8 @@ class ConsumableImporter extends Importer
             ?: $this->resolveDefaultCategory()?->name;
         $this->data['supplier'] = $this->normalizeText($this->data['supplier'] ?? null);
         $this->data['location'] = $this->normalizeText($this->data['location'] ?? null);
-        $this->data['model_number'] = $this->normalizeText($this->data['model_number'] ?? null);
-        $this->data['item_no'] = $this->normalizeText($this->data['item_no'] ?? null);
-        $this->data['order_number'] = $this->normalizeText($this->data['order_number'] ?? null);
+        $this->data['serial'] = $this->normalizeText($this->data['serial'] ?? null);
         $this->data['notes'] = $this->normalizeText($this->data['notes'] ?? null);
-
-        if (! array_key_exists('min_qty', $this->data) || $this->data['min_qty'] === null) {
-            $this->data['min_qty'] = 0;
-        }
 
         if (! array_key_exists('requestable', $this->data) || $this->data['requestable'] === null) {
             $this->data['requestable'] = false;

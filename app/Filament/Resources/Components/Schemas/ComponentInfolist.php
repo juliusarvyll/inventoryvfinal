@@ -21,10 +21,7 @@ class ComponentInfolist
                 TextEntry::make('location.name')
                     ->label('Location')
                     ->placeholder('-'),
-                TextEntry::make('qty')
-                    ->numeric(),
-                TextEntry::make('min_qty')
-                    ->numeric(),
+                TextEntry::make('asset_tag'),
                 TextEntry::make('serial')
                     ->placeholder('-'),
                 TextEntry::make('purchase_cost')
@@ -32,8 +29,6 @@ class ComponentInfolist
                     ->placeholder('-'),
                 TextEntry::make('purchase_date')
                     ->date()
-                    ->placeholder('-'),
-                TextEntry::make('order_number')
                     ->placeholder('-'),
                 IconEntry::make('requestable')
                     ->boolean(),

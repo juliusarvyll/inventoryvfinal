@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
-use App\Enums\UserRole;
 use App\Filament\Actions\ExportPdfAction;
 use App\Filament\Actions\SetUserRoleBulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -54,15 +53,15 @@ class UsersTable
                     ->searchable(),
                 IconColumn::make('is_active')
                     ->boolean(),
-                TextColumn::make('role')
+                TextColumn::make('roles.name')
+                    ->label('Shield roles')
                     ->badge()
                     ->searchable(),
             ])
             ->filters([
-                SelectFilter::make('role')
-                    ->options(collect(UserRole::cases())->mapWithKeys(
-                        fn (UserRole $role): array => [$role->value => $role->value],
-                    )->all()),
+                SelectFilter::make('roles')
+                    ->relationship('roles', 'name')
+                    ->label('Shield role'),
                 TernaryFilter::make('is_active'),
                 TernaryFilter::make('email_verified_at')
                     ->label('Email Verified')

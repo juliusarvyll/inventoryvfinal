@@ -6,6 +6,7 @@ use Database\Factories\PreventiveMaintenanceChecklistFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PreventiveMaintenanceChecklist extends Model
@@ -33,6 +34,12 @@ class PreventiveMaintenanceChecklist extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'category_preventive_maintenance_checklist')
+            ->withTimestamps();
     }
 
     public function items(): HasMany

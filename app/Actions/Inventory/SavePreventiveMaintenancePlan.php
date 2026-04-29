@@ -4,6 +4,7 @@ namespace App\Actions\Inventory;
 
 use App\Filament\Resources\PreventiveMaintenances\Schemas\PreventiveMaintenanceForm;
 use App\Models\Asset;
+use App\Models\Location;
 use App\Models\PreventiveMaintenance;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -54,9 +55,12 @@ class SavePreventiveMaintenancePlan
 
             $preventiveMaintenance->categories()->sync($selectedCategoryIds);
 
+            $location = Location::query()->find($locationId);
+            $locationIds = $location?->selfAndDescendantIds() ?? [$locationId];
+
             $preventiveMaintenance->assets()->sync(
                 Asset::query()
-                    ->where('location_id', $locationId)
+                    ->whereIn('location_id', $locationIds)
                     ->whereIn('category_id', $selectedCategoryIds === [] ? [0] : $selectedCategoryIds)
                     ->pluck('id')
                     ->all(),

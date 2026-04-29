@@ -22,22 +22,17 @@ class RecentRequestsWidget extends TableWidget
     {
         return $table
             ->query(fn (): Builder => ItemRequest::query()
-                ->with(['user', 'requestable'])
+                ->with(['user'])
                 ->where('status', ItemRequestStatus::Pending)
                 ->latest()
                 ->limit(5))
             ->columns([
-                TextColumn::make('requester_name')
-                    ->label('Requester')
-                    ->formatStateUsing(fn (?string $state, ItemRequest $record): string => $state ?: $record->requester_display_name)
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->where(function (Builder $requestQuery) use ($search): void {
-                            $requestQuery->where('requester_name', 'like', "%{$search}%")
-                                ->orWhereHas('user', fn (Builder $userQuery): Builder => $userQuery->where('name', 'like', "%{$search}%"));
-                        });
-                    }),
-                TextColumn::make('requestable_display_name')
-                    ->label('Asset'),
+                TextColumn::make('requested_by')
+                    ->label('Requested By')
+                    ->searchable(),
+                TextColumn::make('items')
+                    ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state),
                 TextColumn::make('qty')
                     ->numeric()
                     ->sortable(),
@@ -51,7 +46,10 @@ class RecentRequestsWidget extends TableWidget
                 Action::make('approve')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (ItemRequest $record): bool => $record->status === ItemRequestStatus::Pending && filled($record->user_id))
+                    ->visible(fn (ItemRequest $record): bool => $record->status === ItemRequestStatus::Pending
+                        && filled($record->user_id)
+                        && filled($record->requestable_type)
+                        && filled($record->requestable_id))
                     ->action(function (ItemRequest $record): void {
                         app(ApproveItemRequest::class)($record, auth()->user());
 

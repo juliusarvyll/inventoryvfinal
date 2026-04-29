@@ -6,11 +6,7 @@ use App\Actions\Inventory\ApproveItemRequest;
 use App\Enums\ItemRequestStatus;
 use App\Filament\Actions\ExportPdfAction;
 use App\Filament\Actions\SetItemRequestStatusBulkAction;
-use App\Models\Accessory;
-use App\Models\Asset;
-use App\Models\Consumable;
 use App\Models\ItemRequest;
-use App\Models\License;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -30,24 +26,33 @@ class ItemRequestsTable
     {
         return $table
             ->columns([
-                TextColumn::make('requester_name')
-                    ->label('Requester')
-                    ->formatStateUsing(fn (?string $state, ItemRequest $record): string => $state ?: $record->requester_display_name)
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->where(function (Builder $requestQuery) use ($search): void {
-                            $requestQuery->where('requester_name', 'like', "%{$search}%")
-                                ->orWhereHas('user', fn (Builder $userQuery): Builder => $userQuery->where('name', 'like', "%{$search}%"));
-                        });
-                    }),
-                TextColumn::make('requestable_display_name')
-                    ->label('Asset'),
+                TextColumn::make('requested_by')
+                    ->label('Requested By')
+                    ->searchable(),
+                TextColumn::make('department')
+                    ->searchable(),
+                TextColumn::make('items')
+                    ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state)
+                    ->searchable(),
                 TextColumn::make('status')
                     ->badge()
                     ->searchable(),
                 TextColumn::make('qty')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('reason')
+                TextColumn::make('unit_cost')
+                    ->money('USD')
+                    ->sortable(),
+                TextColumn::make('source_of_fund')
+                    ->label('Source of Fund')
+                    ->toggleable(),
+                TextColumn::make('purpose_project')
+                    ->label('Purpose Project')
+                    ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('remarks')
                     ->limit(40)
                     ->tooltip(fn (?string $state): ?string => $state)
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -74,14 +79,6 @@ class ItemRequestsTable
                     ->options(collect(ItemRequestStatus::cases())->mapWithKeys(
                         fn (ItemRequestStatus $status): array => [$status->value => ucfirst($status->value)],
                     )->all()),
-                SelectFilter::make('requestable_type')
-                    ->label('Request Type')
-                    ->options([
-                        Asset::class => 'Asset',
-                        License::class => 'License',
-                        Accessory::class => 'Accessory',
-                        Consumable::class => 'Consumable',
-                    ]),
                 SelectFilter::make('handled_by')
                     ->label('Handled By')
                     ->relationship('handler', 'name')
@@ -109,7 +106,10 @@ class ItemRequestsTable
                 Action::make('approve')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (ItemRequest $record): bool => $record->status === ItemRequestStatus::Pending && filled($record->user_id))
+                    ->visible(fn (ItemRequest $record): bool => $record->status === ItemRequestStatus::Pending
+                        && filled($record->user_id)
+                        && filled($record->requestable_type)
+                        && filled($record->requestable_id))
                     ->action(function (ItemRequest $record): void {
                         app(ApproveItemRequest::class)($record, auth()->user());
 

@@ -30,15 +30,6 @@ class CategoryInfolist
                         TextEntry::make('licenses_count')
                             ->label('Licenses')
                             ->numeric(),
-                        TextEntry::make('accessories_count')
-                            ->label('Accessories')
-                            ->numeric(),
-                        TextEntry::make('consumables_count')
-                            ->label('Consumables')
-                            ->numeric(),
-                        TextEntry::make('components_count')
-                            ->label('Components')
-                            ->numeric(),
                     ])
                     ->columns(3),
                 Section::make('Record')

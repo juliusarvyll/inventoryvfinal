@@ -12,6 +12,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PreventiveMaintenanceChecklistFactory extends Factory
 {
+    public function configure(): static
+    {
+        return $this->afterCreating(function (PreventiveMaintenanceChecklist $checklist): void {
+            if ($checklist->category_id) {
+                $checklist->categories()->syncWithoutDetaching([$checklist->category_id]);
+            }
+        });
+    }
+
     public function definition(): array
     {
         return [

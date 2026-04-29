@@ -20,13 +20,13 @@ class PreventiveMaintenanceSchedulesRelationManager extends RelationManager
     {
         return $table
             ->defaultSort('scheduled_for', 'desc')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['checklists.category']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['checklists.categories']))
             ->columns([
                 TextColumn::make('categories')
                     ->label('Categories')
                     ->badge()
                     ->searchable()
-                    ->getStateUsing(fn ($record) => $record->checklists->pluck('category.name')->unique()->join(', ')),
+                    ->getStateUsing(fn ($record) => $record->checklists->flatMap(fn ($checklist) => $checklist->categories->pluck('name'))->unique()->join(', ')),
                 TextColumn::make('checklists_count')
                     ->label('Checklists')
                     ->numeric()

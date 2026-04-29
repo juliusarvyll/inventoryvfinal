@@ -31,22 +31,22 @@ final class ChangeManufacturerBulkAction
                     ->placeholder('None'),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records): void {
-                $manufacturerId = $this->getData()['manufacturer_id'] ?? null;
+            ->action(function (BulkAction $action, Collection $records, array $data): void {
+                $manufacturerId = $data['manufacturer_id'] ?? null;
 
                 $manufacturer = filled($manufacturerId)
                     ? Manufacturer::query()->whereKey($manufacturerId)->first()
                     : null;
 
                 if (filled($manufacturerId) && ! $manufacturer) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof Model) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
@@ -60,11 +60,11 @@ final class ChangeManufacturerBulkAction
 
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $this->success();
+                $action->success();
             })
             ->deselectRecordsAfterCompletion();
     }

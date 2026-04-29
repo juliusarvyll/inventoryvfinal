@@ -3,19 +3,13 @@
 namespace App\Filament\Resources\ItemRequests\Schemas;
 
 use App\Enums\ItemRequestStatus;
-use App\Models\Accessory;
-use App\Models\Asset;
-use App\Models\Component;
-use App\Models\Consumable;
-use App\Models\License;
+use App\Models\User;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\MorphToSelect;
-use Filament\Forms\Components\MorphToSelect\Type;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
 
 class ItemRequestForm
 {
@@ -23,58 +17,60 @@ class ItemRequestForm
     {
         return $schema
             ->components([
-                TextInput::make('requester_name')
-                    ->label('Requester Name')
-                    ->required(),
-                MorphToSelect::make('requestable')
-                    ->label('Requested Item')
+                Select::make('user_id')
+                    ->label('Requested By')
+                    ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        if (blank($state)) {
+                            return;
+                        }
+
+                        $user = User::query()->find($state);
+
+                        if (! $user) {
+                            return;
+                        }
+
+                        $set('requested_by', $user->name);
+                        $set('department', $user->department);
+                    }),
+                TextInput::make('requested_by')
+                    ->label('Requested By (User Name)')
                     ->required()
-                    ->types([
-                        Type::make(Asset::class)
-                            ->label('Asset')
-                            ->titleAttribute('name')
-                            ->modifyOptionsQueryUsing(fn (Builder $query): Builder => $query
-                                ->where('requestable', true)
-                                ->orderBy('asset_tag')
-                                ->orderBy('name'))
-                            ->getOptionLabelFromRecordUsing(fn (Asset $record): string => "{$record->asset_tag} - {$record->name}"),
-                        Type::make(License::class)
-                            ->label('License')
-                            ->titleAttribute('name')
-                            ->modifyOptionsQueryUsing(fn (Builder $query): Builder => $query
-                                ->where('requestable', true)
-                                ->orderBy('name')),
-                        Type::make(Accessory::class)
-                            ->label('Accessory')
-                            ->titleAttribute('name')
-                            ->modifyOptionsQueryUsing(fn (Builder $query): Builder => $query
-                                ->where('requestable', true)
-                                ->orderBy('name')),
-                        Type::make(Consumable::class)
-                            ->label('Consumable')
-                            ->titleAttribute('name')
-                            ->modifyOptionsQueryUsing(fn (Builder $query): Builder => $query
-                                ->where('requestable', true)
-                                ->orderBy('name')),
-                        Type::make(Component::class)
-                            ->label('Component')
-                            ->titleAttribute('name')
-                            ->modifyOptionsQueryUsing(fn (Builder $query): Builder => $query
-                                ->where('requestable', true)
-                                ->orderBy('name')),
-                    ]),
-                Select::make('status')
-                    ->options(ItemRequestStatus::class)
-                    ->default('pending')
-                    ->required(),
+                    ->maxLength(255),
+                TextInput::make('department')
+                    ->required()
+                    ->maxLength(255),
+                Textarea::make('items')
+                    ->required()
+                    ->rows(3)
+                    ->columnSpanFull(),
                 TextInput::make('qty')
                     ->required()
                     ->numeric()
-                    ->default(1),
-                Textarea::make('reason')
+                    ->default(1)
+                    ->minValue(1),
+                TextInput::make('unit_cost')
+                    ->label('Unit Cost')
+                    ->numeric()
+                    ->prefix('$'),
+                TextInput::make('source_of_fund')
+                    ->label('Source of Fund')
+                    ->maxLength(255),
+                Textarea::make('purpose_project')
+                    ->label('Purpose Project')
+                    ->rows(3)
                     ->columnSpanFull(),
+                Textarea::make('remarks')
+                    ->rows(3)
+                    ->columnSpanFull(),
+                Select::make('status')
+                    ->options(ItemRequestStatus::class)
+                    ->default(ItemRequestStatus::Pending->value)
+                    ->required(),
                 Textarea::make('deny_reason')
                     ->columnSpanFull(),
                 Select::make('handled_by')

@@ -18,7 +18,7 @@ class PreventiveMaintenanceChecklistsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('preventive_maintenance_checklists.created_at', 'desc')
             ->columns([
                 IconColumn::make('is_active')
                     ->label('Active')
@@ -26,7 +26,7 @@ class PreventiveMaintenanceChecklistsRelationManager extends RelationManager
                 TextColumn::make('items_count')
                     ->label('Items')
                     ->numeric(),
-                TextColumn::make('created_at')
+                TextColumn::make('preventive_maintenance_checklists.created_at')
                     ->dateTime()
                     ->sortable(),
             ])

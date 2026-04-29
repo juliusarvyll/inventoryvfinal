@@ -18,15 +18,16 @@ class PreventiveMaintenanceChecklistForm
         return $schema
             ->components([
                 Section::make('Checklist Setup')
-                    ->description('Define which category this checklist applies to and whether it is currently available.')
+                    ->description('Define which categories this checklist applies to and whether it is currently available.')
                     ->schema([
-                        Select::make('category_id')
-                            ->relationship('category', 'name')
+                        Select::make('category_ids')
+                            ->label('Categories')
+                            ->relationship('categories', 'name')
                             ->searchable()
                             ->preload()
+                            ->multiple()
                             ->required()
-                            ->unique(ignoreRecord: true)
-                            ->helperText('Each category can have at most one checklist.'),
+                            ->helperText('Pick one or more categories that can share this checklist.'),
                         Toggle::make('is_active')
                             ->label('Active')
                             ->default(true)

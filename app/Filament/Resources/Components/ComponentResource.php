@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ComponentResource extends Resource
 {
@@ -23,6 +24,13 @@ class ComponentResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPuzzlePiece;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['category', 'supplier', 'location', 'statusLabel']);
+    }
 
     public static function form(Schema $schema): Schema
     {

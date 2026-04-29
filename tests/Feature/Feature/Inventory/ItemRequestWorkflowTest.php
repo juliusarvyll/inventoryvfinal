@@ -12,8 +12,18 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('approving an asset request fulfills it and checks out the asset', function () {
-    $available = StatusLabel::factory()->available()->create();
-    StatusLabel::factory()->deployed()->create();
+    $available = StatusLabel::query()->firstOrCreate([
+        'name' => 'Available',
+    ], [
+        'color' => '#22c55e',
+        'type' => 'deployable',
+    ]);
+    StatusLabel::query()->firstOrCreate([
+        'name' => 'Deployed',
+    ], [
+        'color' => '#3b82f6',
+        'type' => 'deployable',
+    ]);
 
     $requestor = User::factory()->create();
     $handler = User::factory()->itStaff()->create();
@@ -60,8 +70,18 @@ test('external requester item requests can be stored without a linked user for a
 });
 
 test('external requester item requests must be fulfilled manually', function () {
-    $available = StatusLabel::factory()->available()->create();
-    StatusLabel::factory()->deployed()->create();
+    $available = StatusLabel::query()->firstOrCreate([
+        'name' => 'Available',
+    ], [
+        'color' => '#22c55e',
+        'type' => 'deployable',
+    ]);
+    StatusLabel::query()->firstOrCreate([
+        'name' => 'Deployed',
+    ], [
+        'color' => '#3b82f6',
+        'type' => 'deployable',
+    ]);
 
     $handler = User::factory()->itStaff()->create();
     $asset = Asset::factory()->create([
@@ -80,5 +100,5 @@ test('external requester item requests must be fulfilled manually', function () 
     ]);
 
     expect(fn () => app(ApproveItemRequest::class)($itemRequest, $handler))
-        ->toThrow(\RuntimeException::class, 'Requests without a linked system user must be fulfilled manually.');
+        ->toThrow(RuntimeException::class, 'Requests without a linked system user must be fulfilled manually.');
 });

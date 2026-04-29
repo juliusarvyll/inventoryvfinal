@@ -28,8 +28,9 @@ class StartPreventiveMaintenanceSession
         ?string $generalNotes = null,
     ): PreventiveMaintenanceSession {
         $preventiveMaintenance->loadMissing('categories', 'items');
+        $scopeLocationIds = $preventiveMaintenance->location?->selfAndDescendantIds() ?? [$preventiveMaintenance->location_id];
 
-        if ($preventiveMaintenance->location_id !== $asset->location_id) {
+        if (! in_array((int) $asset->location_id, $scopeLocationIds, true)) {
             throw new RuntimeException('The selected preventive maintenance template does not match the asset location.');
         }
 

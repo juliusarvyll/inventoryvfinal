@@ -17,7 +17,7 @@ class PreventiveMaintenanceExecutionsRelationManager extends RelationManager
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query): Builder => $query
-                ->with(['performer', 'schedule.checklists.category', 'checklist.category'])
+                ->with(['performer', 'schedule.checklists.categories', 'checklist.categories'])
                 ->withCount([
                     'items',
                     'items as passed_items_count' => fn (Builder $itemQuery): Builder => $itemQuery->where('is_passed', true),
@@ -36,9 +36,10 @@ class PreventiveMaintenanceExecutionsRelationManager extends RelationManager
                         'needs_attention' => 'warning',
                         default => 'gray',
                     }),
-                TextColumn::make('checklist.category.name')
-                    ->label('Category')
+                TextColumn::make('checklist_categories')
+                    ->label('Categories')
                     ->badge()
+                    ->getStateUsing(fn ($record) => $record->checklist?->categories?->pluck('name')->unique()->join(', '))
                     ->placeholder('-'),
                 TextColumn::make('performer.name')
                     ->label('Performed by')

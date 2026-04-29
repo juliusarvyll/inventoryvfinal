@@ -22,17 +22,18 @@ test('pm checklist resource pages render redesigned filament ui components', fun
         'created_by' => $admin->getKey(),
         'updated_by' => $admin->getKey(),
     ]);
+    $checklist->categories()->attach($category);
 
     $this->actingAs($admin);
 
     Livewire::test(ListPreventiveMaintenanceChecklists::class)
-        ->assertSee('Category')
+        ->assertSee('Categories')
         ->assertSee('Items')
         ->assertSee('Active');
 
     Livewire::test(CreatePreventiveMaintenanceChecklist::class)
         ->assertSee('Checklist Setup')
-        ->assertSee('Each category can have at most one checklist.');
+        ->assertSee('Pick one or more categories that can share this checklist.');
 
     Livewire::test(EditPreventiveMaintenanceChecklist::class, ['record' => $checklist->getKey()])
         ->assertSee('Checklist Setup')
@@ -42,12 +43,13 @@ test('pm checklist resource pages render redesigned filament ui components', fun
 test('pm schedule resource pages render redesigned filament ui components', function () {
     $admin = User::factory()->admin()->create();
     $category = Category::factory()->asset()->create();
-    PreventiveMaintenanceChecklist::query()->create([
+    $checklist = PreventiveMaintenanceChecklist::query()->create([
         'category_id' => $category->getKey(),
         'is_active' => true,
         'created_by' => $admin->getKey(),
         'updated_by' => $admin->getKey(),
     ]);
+    $checklist->categories()->attach($category);
 
     $this->actingAs($admin);
 

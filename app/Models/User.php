@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -12,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
     'name',
@@ -25,13 +24,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'location',
     'avatar',
     'is_active',
-    'role',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -44,7 +42,6 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'is_active' => 'boolean',
             'password' => 'hashed',
-            'role' => UserRole::class,
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -79,27 +76,6 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(ItemRequest::class, 'handled_by');
     }
 
-    public function hasRole(UserRole|string $role): bool
-    {
-        $expected = $role instanceof UserRole ? $role : UserRole::tryFrom($role);
-
-        return $expected !== null && $this->role === $expected;
-    }
-
-    /**
-     * @param  array<int, UserRole|string>  $roles
-     */
-    public function hasAnyRole(array $roles): bool
-    {
-        foreach ($roles as $role) {
-            if ($this->hasRole($role)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public function canAccessPanel(Panel $panel): bool
     {
         if (! $this->is_active) {
@@ -107,7 +83,7 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return match ($panel->getId()) {
-            'admin' => $this->hasAnyRole([UserRole::Admin, UserRole::ItStaff]),
+            'admin' => $this->hasAnyRole(['super_admin', 'panel_user']),
             'portal' => true,
             default => false,
         };

@@ -2,16 +2,13 @@
 
 use App\Enums\ItemRequestStatus;
 use App\Filament\Admin\Widgets\ExpiringLicensesWidget;
-use App\Filament\Admin\Widgets\LowStockWidget;
 use App\Filament\Admin\Widgets\RecentRequestsWidget;
 use App\Filament\Admin\Widgets\RequestStatusChartWidget;
 use App\Filament\Admin\Widgets\StatsOverviewWidget;
 use App\Filament\Resources\Assets\Pages\ListAssets;
-use App\Filament\Resources\Consumables\Pages\ListConsumables;
 use App\Filament\Resources\ItemRequests\Pages\ListItemRequests;
 use App\Filament\Resources\Licenses\Pages\ListLicenses;
 use App\Filament\Resources\Users\Pages\ListUsers;
-use App\Models\Consumable;
 use App\Models\ItemRequest;
 use App\Models\License;
 use App\Models\User;
@@ -28,16 +25,13 @@ test('admin list pages expose quick-win filters', function () {
         ->assertSee('Checked Out');
 
     Livewire::test(ListItemRequests::class)
-        ->assertSee('Request Type');
+        ->assertSee('Source of Fund');
 
     Livewire::test(ListUsers::class)
         ->assertSee('Email Verified');
 
     Livewire::test(ListLicenses::class)
         ->assertSee('Expiration date');
-
-    Livewire::test(ListConsumables::class)
-        ->assertSee('Low Stock');
 });
 
 test('admin widgets expose actionable shortcuts and clean stats copy', function () {
@@ -45,18 +39,13 @@ test('admin widgets expose actionable shortcuts and clean stats copy', function 
     $requester = User::factory()->create();
     $this->actingAs($admin);
 
-    Consumable::factory()->create([
-        'qty' => 1,
-        'min_qty' => 5,
-    ]);
-
     License::factory()->create([
         'expiration_date' => now()->addDays(7),
     ]);
 
     ItemRequest::factory()->create([
         'user_id' => $requester->getKey(),
-        'requester_name' => $requester->name,
+        'requested_by' => $requester->name,
         'status' => ItemRequestStatus::Pending,
     ]);
 
@@ -71,12 +60,9 @@ test('admin widgets expose actionable shortcuts and clean stats copy', function 
         ->assertSee('Request Pipeline');
 
     Livewire::test(RecentRequestsWidget::class)
-        ->assertSee('Requester')
+        ->assertSee('Requested By')
         ->assertSee('Open');
 
     Livewire::test(ExpiringLicensesWidget::class)
         ->assertSee('Open');
-
-    Livewire::test(LowStockWidget::class)
-        ->assertSee('Manage');
 });

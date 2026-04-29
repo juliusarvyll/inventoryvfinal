@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ItemRequestStatus;
+use Database\Factories\ItemRequestFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ItemRequest extends Model
 {
-    /** @use HasFactory<\Database\Factories\ItemRequestFactory> */
+    /** @use HasFactory<ItemRequestFactory> */
     use HasFactory;
 
     /**
@@ -20,10 +21,17 @@ class ItemRequest extends Model
     protected $fillable = [
         'user_id',
         'requester_name',
+        'requested_by',
+        'department',
         'requestable_type',
         'requestable_id',
         'status',
         'qty',
+        'items',
+        'unit_cost',
+        'remarks',
+        'source_of_fund',
+        'purpose_project',
         'reason',
         'deny_reason',
         'handled_by',
@@ -36,6 +44,7 @@ class ItemRequest extends Model
         return [
             'status' => ItemRequestStatus::class,
             'qty' => 'integer',
+            'unit_cost' => 'decimal:2',
             'handled_at' => 'datetime',
             'fulfilled_at' => 'datetime',
         ];
@@ -58,11 +67,11 @@ class ItemRequest extends Model
 
     protected function requesterDisplayName(): Attribute
     {
-        return Attribute::get(fn (): string => $this->requester_name ?: ($this->user?->name ?? '-'));
+        return Attribute::get(fn (): string => $this->requested_by ?: ($this->requester_name ?: ($this->user?->name ?? '-')));
     }
 
     protected function requestableDisplayName(): Attribute
     {
-        return Attribute::get(fn (): string => $this->requestable?->name ?? class_basename($this->requestable_type));
+        return Attribute::get(fn (): string => $this->items ?: ($this->requestable?->name ?? class_basename((string) $this->requestable_type)));
     }
 }

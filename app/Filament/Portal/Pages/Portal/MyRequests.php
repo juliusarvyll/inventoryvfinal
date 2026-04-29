@@ -10,6 +10,8 @@ use Illuminate\Support\Collection;
 
 class MyRequests extends Page
 {
+    private const MAX_RESULTS = 25;
+
     protected string $view = 'filament.portal.pages.portal.my-requests';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
@@ -30,9 +32,10 @@ class MyRequests extends Page
     {
         return [
             'requests' => ItemRequest::query()
-                ->with(['handler', 'requestable'])
+                ->with(['handler'])
                 ->where('user_id', auth()->id())
                 ->latest()
+                ->limit(self::MAX_RESULTS)
                 ->get(),
         ];
     }

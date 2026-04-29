@@ -2,9 +2,8 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use App\Enums\UserRole;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -41,11 +40,12 @@ class UserForm
                 Toggle::make('is_active')
                     ->default(true)
                     ->required(),
-                Select::make('role')
-                    ->options(UserRole::class)
-                    ->default(UserRole::EndUser->value)
-                    ->required()
-                    ->native(false),
+                Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->label('Shield roles')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
             ]);
     }
 }

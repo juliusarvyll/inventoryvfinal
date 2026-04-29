@@ -8,6 +8,7 @@ use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 final class SetItemRequestStatusBulkAction
 {
@@ -22,17 +23,17 @@ final class SetItemRequestStatusBulkAction
                 Select::make('status')
                     ->label('Status')
                     ->options(collect(ItemRequestStatus::cases())
-                        ->mapWithKeys(fn (ItemRequestStatus $case): array => [$case->value => \Illuminate\Support\Str::headline($case->name)])
+                        ->mapWithKeys(fn (ItemRequestStatus $case): array => [$case->value => Str::headline($case->name)])
                         ->all())
                     ->required()
                     ->native(false),
             ])
             ->authorizeIndividualRecords('update')
-            ->action(function (Collection $records): void {
-                $statusValue = $this->getData()['status'] ?? null;
+            ->action(function (BulkAction $action, Collection $records, array $data): void {
+                $statusValue = $data['status'] ?? null;
 
                 if (blank($statusValue)) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
@@ -40,14 +41,14 @@ final class SetItemRequestStatusBulkAction
                 try {
                     $status = ItemRequestStatus::from((string) $statusValue);
                 } catch (\ValueError) {
-                    $this->failure();
+                    $action->failure();
 
                     return;
                 }
 
                 foreach ($records as $record) {
                     if (! $record instanceof ItemRequest) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
 
                         continue;
                     }
@@ -56,11 +57,11 @@ final class SetItemRequestStatusBulkAction
                         $record->status = $status;
                         $record->save();
                     } catch (\Throwable) {
-                        $this->reportBulkProcessingFailure();
+                        $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $this->success();
+                $action->success();
             })
             ->deselectRecordsAfterCompletion();
     }

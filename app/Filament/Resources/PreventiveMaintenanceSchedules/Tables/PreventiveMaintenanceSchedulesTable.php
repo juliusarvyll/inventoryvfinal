@@ -41,7 +41,7 @@ class PreventiveMaintenanceSchedulesTable
                     ->wrap()
                     ->placeholder('No categories')
                     ->searchable()
-                    ->getStateUsing(fn ($record) => $record->checklists->pluck('category.name')->unique()->join(', ')),
+                    ->getStateUsing(fn ($record) => $record->checklists->flatMap(fn ($checklist) => $checklist->categories->pluck('name'))->unique()->join(', ')),
                 TextColumn::make('checklists_count')
                     ->label('Checklists')
                     ->numeric()
@@ -88,10 +88,10 @@ class PreventiveMaintenanceSchedulesTable
                     ->modalDescription('Select the checklist and asset, then capture item-level results.')
                     ->modalSubmitActionLabel('Start execution')
                     ->form(function ($record): array {
-                        $record->loadMissing(['checklists.category', 'checklists.items', 'location']);
+                        $record->loadMissing(['checklists.categories', 'checklists.items', 'location']);
 
                         $checklistOptions = $record->checklists->mapWithKeys(fn ($checklist) => [
-                            $checklist->id => $checklist->category?->name ?? "Checklist #{$checklist->id}",
+                            $checklist->id => $checklist->categories->pluck('name')->unique()->join(', ') ?: "Checklist #{$checklist->id}",
                         ])->toArray();
 
                         return [
@@ -138,9 +138,12 @@ class PreventiveMaintenanceSchedulesTable
                                                 return [];
                                             }
 
+                                            $categoryIds = $checklist->categories->pluck('id')->all();
+                                            $locationIds = $record->location?->selfAndDescendantIds() ?? [$record->location_id];
+
                                             return Asset::query()
-                                                ->where('location_id', $record->location_id)
-                                                ->where('category_id', $checklist->category_id)
+                                                ->whereIn('location_id', $locationIds === [] ? [0] : $locationIds)
+                                                ->whereIn('category_id', $categoryIds === [] ? [0] : $categoryIds)
                                                 ->orderBy('name')
                                                 ->pluck('name', 'id')
                                                 ->toArray();
@@ -233,6 +236,6 @@ class PreventiveMaintenanceSchedulesTable
             ])
             ->emptyStateHeading('No PM schedules yet')
             ->emptyStateDescription('Create a schedule, attach checklist templates, then start executions from this table.')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['location', 'checklists.category']));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['location', 'checklists.categories']));
     }
 }

@@ -27,7 +27,7 @@ class ItemRequestResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['user', 'handler', 'requestable']);
+        return parent::getEloquentQuery()->with(['user', 'handler']);
     }
 
     public static function form(Schema $schema): Schema

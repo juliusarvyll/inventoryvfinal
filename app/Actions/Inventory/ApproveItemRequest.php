@@ -4,6 +4,8 @@ namespace App\Actions\Inventory;
 
 use App\Enums\ItemRequestStatus;
 use App\Models\Accessory;
+use App\Models\Asset;
+use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\ItemRequest;
 use App\Models\License;
@@ -16,8 +18,7 @@ class ApproveItemRequest
 {
     public function __construct(
         protected CheckoutAsset $checkoutAsset,
-    ) {
-    }
+    ) {}
 
     public function __invoke(ItemRequest $itemRequest, User $handler): ItemRequest
     {
@@ -31,17 +32,22 @@ class ApproveItemRequest
 
         return DB::transaction(function () use ($itemRequest, $handler): ItemRequest {
             $requestable = $itemRequest->requestable()->getResults();
+            $requestNotes = $itemRequest->purpose_project ?: $itemRequest->reason;
 
             match (true) {
-                $requestable instanceof \App\Models\Asset => ($this->checkoutAsset)(
+                $requestable instanceof Asset => ($this->checkoutAsset)(
                     $requestable,
                     $itemRequest->user,
                     $handler,
-                    $itemRequest->reason,
+                    $requestNotes,
                 ),
                 $requestable instanceof License => $this->assignLicenseSeats($requestable, $itemRequest),
-                $requestable instanceof Accessory => $this->assignAccessory($requestable, $itemRequest),
-                $requestable instanceof Consumable => $this->assignConsumable($requestable, $itemRequest),
+                $requestable instanceof Accessory, $requestable instanceof Consumable, $requestable instanceof Component => ($this->checkoutAsset)(
+                    $requestable,
+                    $itemRequest->user,
+                    $handler,
+                    $requestNotes,
+                ),
                 default => throw new RuntimeException('This request type is not supported yet.'),
             };
 
@@ -67,33 +73,5 @@ class ApproveItemRequest
                 'assigned_at' => now(),
             ]);
         }
-    }
-
-    protected function assignAccessory(Accessory $accessory, ItemRequest $itemRequest): void
-    {
-        if ($accessory->qtyRemaining() < $itemRequest->qty) {
-            throw new RuntimeException('The requested accessory quantity is not available.');
-        }
-
-        $accessory->checkouts()->create([
-            'assigned_to' => $itemRequest->user_id,
-            'qty' => $itemRequest->qty,
-            'assigned_at' => now(),
-            'note' => $itemRequest->reason,
-        ]);
-    }
-
-    protected function assignConsumable(Consumable $consumable, ItemRequest $itemRequest): void
-    {
-        if ($consumable->qtyRemaining() < $itemRequest->qty) {
-            throw new RuntimeException('The requested consumable quantity is not available.');
-        }
-
-        $consumable->assignments()->create([
-            'assigned_to' => $itemRequest->user_id,
-            'qty' => $itemRequest->qty,
-            'assigned_at' => now(),
-            'note' => $itemRequest->reason,
-        ]);
     }
 }

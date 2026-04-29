@@ -7,14 +7,20 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "anourvalar/office": "^2.6",
         "barryvdh/laravel-dompdf": "^3.1",
+        "bezhansalleh/filament-shield": "^4.2",
         "filament/filament": "~4.0",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/fortify": "^1.34",
-        "laravel/framework": "^13.0",
+        "laravel/framework": "12.52",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
-        "maatwebsite/excel": "^3.1"
+        "maatwebsite/excel": "^3.1",
+        "maennchen/zipstream-php": "3.2",
+        "mpdf/mpdf": "^8.3",
+        "nativephp/desktop": "^2.1",
+        "phpoffice/phpspreadsheet": "^1.30"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

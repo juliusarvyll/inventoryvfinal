@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Location;
 use App\Models\PreventiveMaintenanceChecklist;
 use App\Models\PreventiveMaintenanceChecklistItem;
-use App\Models\PreventiveMaintenanceExecution;
 use App\Models\PreventiveMaintenanceSchedule;
 use App\Models\StatusLabel;
 use App\Models\User;
@@ -49,14 +48,14 @@ test('starting a preventive maintenance execution snapshots checklist results', 
 
     $schedule = PreventiveMaintenanceSchedule::factory()->create([
         'location_id' => $location->getKey(),
-        'category_id' => $category->getKey(),
-        'preventive_maintenance_checklist_id' => $checklist->getKey(),
         'scheduled_for' => now()->addDays(7),
         'is_active' => true,
     ]);
+    $schedule->checklists()->attach($checklist);
 
     $execution = app(StartPreventiveMaintenanceExecution::class)(
         $schedule,
+        $checklist,
         $asset,
         [
             [
@@ -122,13 +121,13 @@ test('starting a preventive maintenance execution rejects schedules outside the 
 
     $schedule = PreventiveMaintenanceSchedule::factory()->create([
         'location_id' => $location2->getKey(),
-        'category_id' => $category->getKey(),
-        'preventive_maintenance_checklist_id' => $checklist->getKey(),
         'is_active' => true,
     ]);
+    $schedule->checklists()->attach($checklist);
 
     expect(fn () => app(StartPreventiveMaintenanceExecution::class)(
         $schedule,
+        $checklist,
         $asset,
         [
             [
@@ -166,13 +165,13 @@ test('starting a preventive maintenance execution rejects schedules outside the 
 
     $schedule = PreventiveMaintenanceSchedule::factory()->create([
         'location_id' => $location->getKey(),
-        'category_id' => $otherCategory->getKey(),
-        'preventive_maintenance_checklist_id' => $checklist->getKey(),
         'is_active' => true,
     ]);
+    $schedule->checklists()->attach($checklist);
 
     expect(fn () => app(StartPreventiveMaintenanceExecution::class)(
         $schedule,
+        $checklist,
         $asset,
         [
             [
@@ -181,7 +180,7 @@ test('starting a preventive maintenance execution rejects schedules outside the 
             ],
         ],
         $actor,
-    ))->toThrow(RuntimeException::class, 'The selected preventive maintenance schedule does not match the asset category.');
+    ))->toThrow(RuntimeException::class, 'The selected preventive maintenance checklist does not match the asset category.');
 });
 
 test('starting a preventive maintenance execution rejects inactive checklists', function () {
@@ -209,13 +208,13 @@ test('starting a preventive maintenance execution rejects inactive checklists', 
 
     $schedule = PreventiveMaintenanceSchedule::factory()->create([
         'location_id' => $location->getKey(),
-        'category_id' => $category->getKey(),
-        'preventive_maintenance_checklist_id' => $checklist->getKey(),
         'is_active' => true,
     ]);
+    $schedule->checklists()->attach($checklist);
 
     expect(fn () => app(StartPreventiveMaintenanceExecution::class)(
         $schedule,
+        $checklist,
         $asset,
         [
             [
@@ -246,13 +245,13 @@ test('starting a preventive maintenance execution rejects invalid checklist item
 
     $schedule = PreventiveMaintenanceSchedule::factory()->create([
         'location_id' => $location->getKey(),
-        'category_id' => $category->getKey(),
-        'preventive_maintenance_checklist_id' => $checklist->getKey(),
         'is_active' => true,
     ]);
+    $schedule->checklists()->attach($checklist);
 
     expect(fn () => app(StartPreventiveMaintenanceExecution::class)(
         $schedule,
+        $checklist,
         $asset,
         [
             [

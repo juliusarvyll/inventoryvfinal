@@ -59,17 +59,6 @@ class ComponentImporter extends Importer
                 ->fillRecordUsing(fn (): null => null)
                 ->ignoreBlankState()
                 ->rules(['nullable', 'max:255']),
-            ImportColumn::make('qty')
-                ->label('Quantity')
-                ->guess(['Qty', 'Quantity'])
-                ->numeric()
-                ->rules(['required', 'numeric', 'min:0']),
-            ImportColumn::make('min_qty')
-                ->label('Minimum Quantity')
-                ->guess(['Min Qty', 'Minimum Quantity', 'Minimum Qty'])
-                ->numeric()
-                ->helperText('Optional. Defaults to 0.')
-                ->rules(['required', 'numeric', 'min:0']),
             ImportColumn::make('serial')
                 ->label('Serial')
                 ->guess(['Serial', 'Serial Number'])
@@ -86,11 +75,6 @@ class ComponentImporter extends Importer
                 ->guess(['Purchase Date'])
                 ->ignoreBlankState()
                 ->rules(['nullable', 'date']),
-            ImportColumn::make('order_number')
-                ->label('Order Number')
-                ->guess(['Order Number', 'PO Number'])
-                ->ignoreBlankState()
-                ->rules(['nullable', 'max:255']),
             ImportColumn::make('requestable')
                 ->label('Requestable')
                 ->guess(['Requestable'])
@@ -131,8 +115,6 @@ class ComponentImporter extends Importer
         return [
             'name.required' => 'The component name column is required. This row will be skipped.',
             'category.required' => 'The category could not be determined. This row will be skipped.',
-            'qty.required' => 'The quantity column is required. This row will be skipped.',
-            'min_qty.required' => 'The minimum quantity could not be determined. This row will be skipped.',
             'requestable.required' => 'The requestable value could not be determined. This row will be skipped.',
         ];
     }
@@ -167,10 +149,10 @@ class ComponentImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Your component import has completed and ' . Number::format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
+        $body = 'Your component import has completed and '.Number::format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' Import completed with warnings: ' . Number::format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' were skipped because of missing or invalid data.';
+            $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
         }
 
         return $body;
@@ -184,12 +166,7 @@ class ComponentImporter extends Importer
         $this->data['supplier'] = $this->normalizeText($this->data['supplier'] ?? null);
         $this->data['location'] = $this->normalizeText($this->data['location'] ?? null);
         $this->data['serial'] = $this->normalizeText($this->data['serial'] ?? null);
-        $this->data['order_number'] = $this->normalizeText($this->data['order_number'] ?? null);
         $this->data['notes'] = $this->normalizeText($this->data['notes'] ?? null);
-
-        if (! array_key_exists('min_qty', $this->data) || $this->data['min_qty'] === null) {
-            $this->data['min_qty'] = 0;
-        }
 
         if (! array_key_exists('requestable', $this->data) || $this->data['requestable'] === null) {
             $this->data['requestable'] = false;

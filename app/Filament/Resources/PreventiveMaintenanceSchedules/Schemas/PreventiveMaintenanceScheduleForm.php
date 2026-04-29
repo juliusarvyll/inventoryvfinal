@@ -41,9 +41,11 @@ class PreventiveMaintenanceScheduleForm
                             ->relationship(
                                 'checklists',
                                 'id',
-                                fn (Builder $query): Builder => $query->where('is_active', true),
+                                fn (Builder $query): Builder => $query
+                                    ->where('is_active', true)
+                                    ->with('categories'),
                             )
-                            ->getOptionLabelFromRecordUsing(fn ($record): string => $record->category?->name ?? 'No category')
+                            ->getOptionLabelFromRecordUsing(fn ($record): string => $record->categories->pluck('name')->unique()->join(', ') ?: "Checklist #{$record->id}")
                             ->searchable()
                             ->preload()
                             ->multiple()

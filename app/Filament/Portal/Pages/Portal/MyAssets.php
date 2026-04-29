@@ -2,9 +2,8 @@
 
 namespace App\Filament\Portal\Pages\Portal;
 
-use App\Models\AccessoryCheckout;
+use App\Enums\InventoryCategoryType;
 use App\Models\AssetCheckout;
-use App\Models\ConsumableAssignment;
 use App\Models\LicenseSeat;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -13,6 +12,8 @@ use Illuminate\Support\Collection;
 
 class MyAssets extends Page
 {
+    private const MAX_RESULTS = 25;
+
     protected string $view = 'filament.portal.pages.portal.my-assets';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
@@ -38,23 +39,31 @@ class MyAssets extends Page
                 ->with(['asset.assetModel.manufacturer', 'asset.statusLabel', 'asset.location'])
                 ->where('assigned_to', $user?->getAuthIdentifier())
                 ->whereNull('returned_at')
+                ->whereHas('asset.category', fn ($query) => $query->where('type', InventoryCategoryType::Asset))
                 ->latest('assigned_at')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
             'licenseSeats' => LicenseSeat::query()
                 ->with(['license.manufacturer', 'asset'])
                 ->where('assigned_to', $user?->getAuthIdentifier())
                 ->latest('assigned_at')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
-            'accessoryCheckouts' => AccessoryCheckout::query()
-                ->with('accessory.category')
+            'accessoryCheckouts' => AssetCheckout::query()
+                ->with(['asset.category', 'asset.location'])
                 ->where('assigned_to', $user?->getAuthIdentifier())
                 ->whereNull('returned_at')
+                ->whereHas('asset.category', fn ($query) => $query->where('type', InventoryCategoryType::Accessory))
                 ->latest('assigned_at')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
-            'consumableAssignments' => ConsumableAssignment::query()
-                ->with('consumable.category')
+            'consumableAssignments' => AssetCheckout::query()
+                ->with(['asset.category', 'asset.location'])
                 ->where('assigned_to', $user?->getAuthIdentifier())
+                ->whereNull('returned_at')
+                ->whereHas('asset.category', fn ($query) => $query->where('type', InventoryCategoryType::Consumable))
                 ->latest('assigned_at')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
         ];
     }

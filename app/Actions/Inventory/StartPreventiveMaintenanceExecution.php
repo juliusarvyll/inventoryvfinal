@@ -32,13 +32,14 @@ class StartPreventiveMaintenanceExecution
         ?string $generalNotes = null,
     ): PreventiveMaintenanceExecution {
         $schedule->loadMissing('checklists.items', 'location');
-        $checklist->loadMissing('items', 'category');
+        $checklist->loadMissing('items', 'categories');
+        $scopeLocationIds = $schedule->location?->selfAndDescendantIds() ?? [$schedule->location_id];
 
-        if ($schedule->location_id !== $asset->location_id) {
+        if (! in_array((int) $asset->location_id, $scopeLocationIds, true)) {
             throw new RuntimeException('The selected preventive maintenance schedule does not match the asset location.');
         }
 
-        if ($checklist->category_id !== $asset->category_id) {
+        if (! $checklist->categories->contains('id', $asset->category_id)) {
             throw new RuntimeException('The selected preventive maintenance checklist does not match the asset category.');
         }
 
@@ -57,7 +58,7 @@ class StartPreventiveMaintenanceExecution
                 'preventive_maintenance_schedule_id' => $schedule->getKey(),
                 'preventive_maintenance_checklist_id' => $checklist->getKey(),
                 'location_id' => $schedule->location_id,
-                'category_id' => $checklist->category_id,
+                'category_id' => $asset->category_id,
                 'asset_id' => $asset->getKey(),
                 'status' => 'pending',
                 'scheduled_for' => $schedule->scheduled_for,
@@ -100,18 +101,18 @@ class StartPreventiveMaintenanceExecution
                 'new_values' => [
                     'asset_name' => $asset->name,
                     'location_name' => $schedule->location->name,
-                    'category_name' => $checklist->category->name,
+                    'category_name' => $asset->category?->name,
                     'status' => $execution->status,
                     'items_count' => $execution->items->count(),
                     'passed_items' => $execution->items->where('is_passed', true)->count(),
                     'failed_items' => $execution->items->where('is_passed', false)->count(),
                 ],
-                'description' => "Started PM execution for asset '{$asset->name}' using checklist '{$checklist->category->name}'",
+                'description' => "Started PM execution for asset '{$asset->name}' using checklist '{$checklist->categories->pluck('name')->unique()->join(', ')}'",
                 'ip_address' => Request::ip(),
                 'user_agent' => Request::userAgent(),
             ]);
 
-            return $execution->fresh(['asset', 'performer', 'schedule.location', 'schedule.checklists.category', 'checklist.category', 'items']);
+            return $execution->fresh(['asset.category', 'performer', 'schedule.location', 'schedule.checklists.categories', 'checklist.categories', 'items']);
         });
     }
 

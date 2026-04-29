@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources\Assets\Schemas;
 
+use App\Filament\Resources\Accessories\AccessoryResource;
 use App\Filament\Resources\AssetModels\AssetModelResource;
 use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\Components\ComponentResource;
+use App\Filament\Resources\Consumables\ConsumableResource;
 use App\Filament\Resources\Locations\LocationResource;
 use App\Filament\Resources\Suppliers\SupplierResource;
 use App\Models\Asset;
@@ -114,6 +117,23 @@ class AssetInfolist
                         IconEntry::make('requestable')
                             ->boolean(),
                     ]),
+                Section::make('Inventory Views')
+                    ->description('Open the consolidated accessory, component, and consumable views that now read from assets.')
+                    ->schema([
+                        TextEntry::make('accessories_link')
+                            ->label('Accessories')
+                            ->state('Open accessories view')
+                            ->url(AccessoryResource::getUrl('index')),
+                        TextEntry::make('components_link')
+                            ->label('Components')
+                            ->state('Open components view')
+                            ->url(ComponentResource::getUrl('index')),
+                        TextEntry::make('consumables_link')
+                            ->label('Consumables')
+                            ->state('Open consumables view')
+                            ->url(ConsumableResource::getUrl('index')),
+                    ])
+                    ->columns(3),
                 Section::make('Record')
                     ->schema([
                         TextEntry::make('created_at')

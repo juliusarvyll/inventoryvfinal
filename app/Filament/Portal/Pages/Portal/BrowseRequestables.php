@@ -15,6 +15,8 @@ use Illuminate\Support\Collection;
 
 class BrowseRequestables extends Page
 {
+    private const MAX_RESULTS = 25;
+
     protected string $view = 'filament.portal.pages.portal.browse-requestables';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
@@ -38,26 +40,31 @@ class BrowseRequestables extends Page
                 ->with(['assetModel.manufacturer', 'category', 'statusLabel', 'location'])
                 ->where('requestable', true)
                 ->latest('asset_tag')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
             'licenses' => License::query()
                 ->with(['manufacturer', 'category'])
                 ->where('requestable', true)
                 ->latest('name')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
             'accessories' => Accessory::query()
-                ->with(['category', 'location'])
+                ->with(['assetModel.manufacturer', 'category', 'statusLabel', 'location'])
                 ->where('requestable', true)
                 ->latest('name')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
             'consumables' => Consumable::query()
-                ->with(['category', 'location'])
+                ->with(['assetModel.manufacturer', 'category', 'statusLabel', 'location'])
                 ->where('requestable', true)
                 ->latest('name')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
             'components' => Component::query()
-                ->with(['category', 'location'])
+                ->with(['assetModel.manufacturer', 'category', 'statusLabel', 'location'])
                 ->where('requestable', true)
                 ->latest('name')
+                ->limit(self::MAX_RESULTS)
                 ->get(),
             'labels' => [
                 InventoryCategoryType::Asset->value => 'Assets',
