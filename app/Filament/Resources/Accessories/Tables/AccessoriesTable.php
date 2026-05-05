@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Accessories\Tables;
 
 use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ChangeLocationBulkAction;
 use App\Filament\Actions\ChangeSupplierBulkAction;
 use App\Filament\Actions\ExportPdfAction;
@@ -61,6 +62,7 @@ class AccessoriesTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('accessories'),
                     ChangeCategoryBulkAction::make(InventoryCategoryType::Accessory, 'accessories'),
                     ChangeLocationBulkAction::make('accessories'),
                     ChangeSupplierBulkAction::make('accessories'),

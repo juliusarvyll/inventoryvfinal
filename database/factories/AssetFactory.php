@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Asset;
 use App\Models\AssetModel;
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Location;
 use App\Models\StatusLabel;
 use App\Models\Supplier;
@@ -20,9 +21,19 @@ class AssetFactory extends Factory
         return [
             'asset_tag' => fake()->unique()->bothify('ICT-#####'),
             'name' => fake()->randomElement(['Laptop', 'Desktop', 'Monitor']).' '.fake()->word(),
+            'department_id' => Department::factory(),
             'asset_model_id' => AssetModel::factory(),
-            'category_id' => Category::factory()->asset(),
-            'status_label_id' => StatusLabel::factory()->available(),
+            'category_id' => function () {
+                return Category::firstOrCreate(
+                    ['name' => 'Asset', 'type' => 'asset']
+                )->id;
+            },
+            'status_label_id' => function () {
+                return StatusLabel::firstOrCreate(
+                    ['name' => 'Available'],
+                    ['color' => '#22c55e', 'type' => 'deployable']
+                )->id;
+            },
             'supplier_id' => Supplier::factory(),
             'location_id' => Location::factory(),
             'serial' => fake()->boolean(70) ? fake()->unique()->bothify('SERIAL-####') : null,

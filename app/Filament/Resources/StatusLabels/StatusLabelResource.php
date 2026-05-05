@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StatusLabels;
 
+use App\Filament\Resources\ShieldResource as Resource;
 use App\Filament\Resources\StatusLabels\Pages\CreateStatusLabel;
 use App\Filament\Resources\StatusLabels\Pages\EditStatusLabel;
 use App\Filament\Resources\StatusLabels\Pages\ListStatusLabels;
@@ -11,7 +12,6 @@ use App\Filament\Resources\StatusLabels\Schemas\StatusLabelInfolist;
 use App\Filament\Resources\StatusLabels\Tables\StatusLabelsTable;
 use App\Models\StatusLabel;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;

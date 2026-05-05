@@ -11,9 +11,9 @@ use App\Filament\Resources\Assets\RelationManagers\PreventiveMaintenanceSchedule
 use App\Filament\Resources\Assets\Schemas\AssetForm;
 use App\Filament\Resources\Assets\Schemas\AssetInfolist;
 use App\Filament\Resources\Assets\Tables\AssetsTable;
+use App\Filament\Resources\ShieldResource as Resource;
 use App\Models\Asset;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;

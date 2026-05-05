@@ -11,13 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Supplier extends Model
 {
     /** @use HasFactory<SupplierFactory> */
-    use HasFactory;
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
         'name',
+        'department_id',
         'address',
         'city',
         'state',

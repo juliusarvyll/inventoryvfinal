@@ -11,9 +11,9 @@ use App\Filament\Resources\Categories\RelationManagers\PreventiveMaintenanceChec
 use App\Filament\Resources\Categories\Schemas\CategoryForm;
 use App\Filament\Resources\Categories\Schemas\CategoryInfolist;
 use App\Filament\Resources\Categories\Tables\CategoriesTable;
+use App\Filament\Resources\ShieldResource as Resource;
 use App\Models\Category;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;

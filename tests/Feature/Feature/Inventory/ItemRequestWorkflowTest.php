@@ -26,7 +26,7 @@ test('approving an asset request fulfills it and checks out the asset', function
     ]);
 
     $requestor = User::factory()->create();
-    $handler = User::factory()->itStaff()->create();
+    $handler = User::factory()->admin()->create();
     $asset = Asset::factory()->create(['status_label_id' => $available->getKey()]);
 
     $itemRequest = ItemRequest::query()->create([
@@ -83,7 +83,7 @@ test('external requester item requests must be fulfilled manually', function () 
         'type' => 'deployable',
     ]);
 
-    $handler = User::factory()->itStaff()->create();
+    $handler = User::factory()->admin()->create();
     $asset = Asset::factory()->create([
         'requestable' => true,
         'status_label_id' => $available->getKey(),

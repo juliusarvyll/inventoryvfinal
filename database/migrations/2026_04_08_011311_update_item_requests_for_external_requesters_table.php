@@ -43,7 +43,7 @@ return new class extends Migration
     public function down(): void
     {
         if (DB::table('item_requests')->whereNull('user_id')->exists()) {
-            throw new \RuntimeException('Cannot roll back while item requests without linked users exist.');
+            throw new RuntimeException('Cannot roll back while item requests without linked users exist.');
         }
 
         Schema::table('item_requests', function (Blueprint $table) {

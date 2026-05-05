@@ -38,4 +38,3 @@ class AssetsByCategoryWidget extends TableWidget
             ->paginated(false);
     }
 }
-

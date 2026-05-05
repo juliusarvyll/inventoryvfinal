@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Licenses\Schemas;
 
+use App\Services\DepartmentContext;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
@@ -17,6 +18,13 @@ class LicenseForm
             ->components([
                 TextInput::make('name')
                     ->required(),
+                Select::make('department_id')
+                    ->relationship('department', 'name')
+                    ->required()
+                    ->default(fn () => DepartmentContext::currentId())
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('product_key'),
                 Select::make('category_id')
                     ->relationship('category', 'name')

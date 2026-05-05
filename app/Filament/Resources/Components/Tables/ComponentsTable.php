@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Components\Tables;
 
 use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ChangeLocationBulkAction;
 use App\Filament\Actions\ChangeSupplierBulkAction;
 use App\Filament\Actions\ExportPdfAction;
@@ -61,6 +62,7 @@ class ComponentsTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('components'),
                     ChangeCategoryBulkAction::make(InventoryCategoryType::Component, 'components'),
                     ChangeLocationBulkAction::make('components'),
                     ChangeSupplierBulkAction::make('components'),

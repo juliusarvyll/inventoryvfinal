@@ -11,9 +11,9 @@ use App\Filament\Resources\Locations\RelationManagers\PreventiveMaintenanceSched
 use App\Filament\Resources\Locations\Schemas\LocationForm;
 use App\Filament\Resources\Locations\Schemas\LocationInfolist;
 use App\Filament\Resources\Locations\Tables\LocationsTable;
+use App\Filament\Resources\ShieldResource as Resource;
 use App\Models\Location;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;

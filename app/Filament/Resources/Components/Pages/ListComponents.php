@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Components\Pages;
 
 use App\Filament\Imports\ComponentImporter;
 use App\Filament\Resources\Components\ComponentResource;
-use Filament\Actions\ImportAction;
 use Filament\Actions\CreateAction;
+use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Validation\Rules\File;
 

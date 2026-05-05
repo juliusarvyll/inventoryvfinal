@@ -29,7 +29,6 @@ final class SetParentLocationBulkAction
                     ->nullable()
                     ->placeholder('None (root)'),
             ])
-            ->authorizeIndividualRecords('update')
             ->action(function (BulkAction $action, Collection $records, array $data): void {
                 $parentId = $data['parent_id'] ?? null;
 
@@ -42,6 +41,8 @@ final class SetParentLocationBulkAction
 
                     return;
                 }
+
+                $updated = 0;
 
                 foreach ($records as $record) {
                     if (! $record instanceof Location) {
@@ -64,12 +65,17 @@ final class SetParentLocationBulkAction
                         }
 
                         $record->save();
+                        $updated++;
                     } catch (\Throwable) {
                         $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $action->success();
+                if ($updated > 0) {
+                    $action->success();
+                } else {
+                    $action->failure();
+                }
             })
             ->deselectRecordsAfterCompletion();
     }

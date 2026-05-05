@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AssetModels\Schemas;
 
+use App\Services\DepartmentContext;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -16,6 +17,13 @@ class AssetModelForm
             ->components([
                 TextInput::make('name')
                     ->required(),
+                Select::make('department_id')
+                    ->relationship('department', 'name')
+                    ->required()
+                    ->default(fn () => DepartmentContext::currentId())
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->searchable()
+                    ->preload(),
                 Select::make('manufacturer_id')
                     ->relationship('manufacturer', 'name')
                     ->required(),

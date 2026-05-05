@@ -10,6 +10,7 @@ use App\Filament\Admin\Widgets\LowStockWidget;
 use App\Filament\Admin\Widgets\RecentRequestsWidget;
 use App\Filament\Admin\Widgets\RequestStatusChartWidget;
 use App\Filament\Admin\Widgets\StatsOverviewWidget;
+use App\Http\Middleware\SetDepartmentContext;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -18,6 +19,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -25,6 +27,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -89,6 +92,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+                SetDepartmentContext::class,
+            ])
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_START,
+                fn (): string => Blade::render('@livewire(\'department-switcher\')')
+            );
     }
 }

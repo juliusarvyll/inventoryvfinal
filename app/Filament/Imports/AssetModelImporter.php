@@ -116,10 +116,10 @@ class AssetModelImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Your asset model import has completed and ' . Number::format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
+        $body = 'Your asset model import has completed and '.Number::format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' Import completed with warnings: ' . Number::format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' were skipped because of missing or invalid data.';
+            $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
         }
 
         return $body;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Suppliers\Tables;
 
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ExportPdfAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -17,6 +18,11 @@ class SuppliersTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('department.name')
+                    ->label('Department')
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('address')
                     ->searchable(),
@@ -71,8 +77,10 @@ class SuppliersTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('suppliers'),
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['department']));
     }
 }

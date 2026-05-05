@@ -28,7 +28,6 @@ final class SetCategoryTypeBulkAction
                     ->required()
                     ->native(false),
             ])
-            ->authorizeIndividualRecords('update')
             ->action(function (BulkAction $action, Collection $records, array $data): void {
                 $typeValue = $data['type'] ?? null;
 
@@ -46,6 +45,8 @@ final class SetCategoryTypeBulkAction
                     return;
                 }
 
+                $updated = 0;
+
                 foreach ($records as $record) {
                     if (! $record instanceof Category) {
                         $action->reportBulkProcessingFailure();
@@ -56,12 +57,17 @@ final class SetCategoryTypeBulkAction
                     try {
                         $record->type = $type;
                         $record->save();
+                        $updated++;
                     } catch (\Throwable) {
                         $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $action->success();
+                if ($updated > 0) {
+                    $action->success();
+                } else {
+                    $action->failure();
+                }
             })
             ->deselectRecordsAfterCompletion();
     }

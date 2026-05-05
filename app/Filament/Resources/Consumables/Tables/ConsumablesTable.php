@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Consumables\Tables;
 
 use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ChangeLocationBulkAction;
 use App\Filament\Actions\ChangeSupplierBulkAction;
 use App\Filament\Actions\ExportPdfAction;
@@ -78,6 +79,7 @@ class ConsumablesTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('consumables'),
                     ChangeCategoryBulkAction::make(InventoryCategoryType::Consumable, 'consumables'),
                     ChangeLocationBulkAction::make('consumables'),
                     ChangeSupplierBulkAction::make('consumables'),

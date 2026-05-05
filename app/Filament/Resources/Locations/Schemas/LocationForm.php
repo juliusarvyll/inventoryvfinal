@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Locations\Schemas;
 
+use App\Models\Asset;
+use App\Services\DepartmentContext;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Collection;
 
 class LocationForm
 {
@@ -16,6 +18,13 @@ class LocationForm
             ->components([
                 TextInput::make('name')
                     ->required(),
+                Select::make('department_id')
+                    ->relationship('department', 'name')
+                    ->required()
+                    ->default(fn () => DepartmentContext::currentId())
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('address'),
                 TextInput::make('city'),
                 TextInput::make('state'),
@@ -24,21 +33,20 @@ class LocationForm
                     ->relationship('parent', 'name')
                     ->searchable()
                     ->preload(),
-                // Add a repeater for asset assignment during location creation/editing
                 Repeater::make('assets')
                     ->label('Assign Assets')
                     ->relationship()
                     ->schema([
                         Select::make('asset_id')
-                            ->relationship('assets', 'asset_tag')
+                            ->label('Asset')
+                            ->options(fn (): Collection => Asset::all()->pluck('name', 'id'))
                             ->searchable()
                             ->preload()
                             ->required(),
                     ])
                     ->collapsible()
                     ->columnSpanFull()
-                    ->visible(fn (Get $get) => ! $get('id')) // Only show when creating new location
-                    ->disabled(fn (Get $get) => ! $get('name')), // Disable until location has a name
+                    ->hidden(true),
             ]);
     }
 }

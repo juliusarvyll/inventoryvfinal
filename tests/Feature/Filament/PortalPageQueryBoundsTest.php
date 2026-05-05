@@ -87,7 +87,7 @@ test('my assets limits each assigned inventory section', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $checkedOutBy = User::factory()->itStaff()->create();
+    $checkedOutBy = User::factory()->admin()->create();
     $manufacturer = Manufacturer::factory()->create();
     $supplier = Supplier::factory()->create();
     $location = Location::factory()->create();

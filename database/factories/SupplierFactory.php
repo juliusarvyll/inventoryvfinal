@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Department;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,6 +15,7 @@ class SupplierFactory extends Factory
     {
         return [
             'name' => fake()->unique()->company(),
+            'department_id' => Department::factory(),
             'address' => fake()->streetAddress(),
             'city' => fake()->city(),
             'state' => fake()->state(),

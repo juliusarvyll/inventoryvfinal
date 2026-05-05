@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(ShieldSeeder::class);
+        $this->call(DepartmentSeeder::class);
 
         User::factory()->admin()->create([
             'name' => 'Inventory Admin',

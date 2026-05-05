@@ -9,12 +9,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('checking out an asset creates a checkout record and deploys the asset', function () {
-    $available = StatusLabel::factory()->available()->create();
-    $deployed = StatusLabel::factory()->deployed()->create();
+    $available = StatusLabel::firstOrCreate(['name' => 'Available'], ['color' => '#22c55e', 'type' => 'deployable']);
+    $deployed = StatusLabel::firstOrCreate(['name' => 'Deployed'], ['color' => '#3b82f6', 'type' => 'deployable']);
 
     $asset = Asset::factory()->create(['status_label_id' => $available->getKey()]);
     $assignee = User::factory()->create();
-    $actor = User::factory()->itStaff()->create();
+    $actor = User::factory()->admin()->create();
 
     $checkout = app(CheckoutAsset::class)($asset, $assignee, $actor, 'Issued for onboarding');
 
@@ -27,8 +27,8 @@ test('checking out an asset creates a checkout record and deploys the asset', fu
 });
 
 test('an asset cannot be checked out twice while still assigned', function () {
-    $available = StatusLabel::factory()->available()->create();
-    StatusLabel::factory()->deployed()->create();
+    $available = StatusLabel::firstOrCreate(['name' => 'Available'], ['color' => '#22c55e', 'type' => 'deployable']);
+    StatusLabel::firstOrCreate(['name' => 'Deployed'], ['color' => '#3b82f6', 'type' => 'deployable']);
 
     $asset = Asset::factory()->create(['status_label_id' => $available->getKey()]);
     $assignee = User::factory()->create();

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\License;
 use App\Models\Manufacturer;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,8 +17,13 @@ class LicenseFactory extends Factory
     {
         return [
             'name' => fake()->randomElement(['Microsoft 365', 'Adobe Creative Cloud', 'AutoCAD']),
+            'department_id' => Department::factory(),
             'product_key' => fake()->optional()->bothify('####-####-####-####'),
-            'category_id' => Category::factory()->license(),
+            'category_id' => function () {
+                return Category::firstOrCreate(
+                    ['name' => 'License', 'type' => 'license']
+                )->id;
+            },
             'manufacturer_id' => Manufacturer::factory(),
             'license_type' => fake()->randomElement(['per_seat', 'per_device', 'open_license', 'site_license']),
             'seats' => fake()->numberBetween(1, 25),

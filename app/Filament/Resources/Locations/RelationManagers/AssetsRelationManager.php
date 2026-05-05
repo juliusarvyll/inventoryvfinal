@@ -11,6 +11,7 @@ use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -104,7 +105,7 @@ class AssetsRelationManager extends RelationManager
                     ->visible(fn () => auth()->user()?->can('Update:Asset') ?? false),
                 Action::make('quickStatusUpdate')
                     ->label('Update Status')
-                    ->icon('heroicon-m-refresh')
+                    ->icon(Heroicon::OutlinedArrowPath)
                     ->color('primary')
                     ->slideOver()
                     ->form([
@@ -125,7 +126,7 @@ class AssetsRelationManager extends RelationManager
             ->bulkActions([
                 BulkAction::make('updateStatus')
                     ->label('Update Status')
-                    ->icon('heroicon-m-refresh')
+                    ->icon(Heroicon::OutlinedArrowPath)
                     ->color('primary')
                     ->form([
                         Select::make('status_label_id')
@@ -141,7 +142,7 @@ class AssetsRelationManager extends RelationManager
                     ->requiresConfirmation(),
                 BulkAction::make('moveAssets')
                     ->label('Move Assets to Another Location')
-                    ->icon('heroicon-m-arrow-right')
+                    ->icon(Heroicon::OutlinedArrowRight)
                     ->color('warning')
                     ->form([
                         Select::make('location_id')
@@ -156,8 +157,7 @@ class AssetsRelationManager extends RelationManager
                         ]);
                     })
                     ->visible(fn () => auth()->user()?->can('Update:Asset') ?? false)
-                    ->requiresConfirmation()
-                    ->deselectSelectedAfterCompletion(),
+                    ->requiresConfirmation(),
             ]);
     }
 }

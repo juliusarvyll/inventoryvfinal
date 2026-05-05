@@ -8,9 +8,9 @@ use App\Filament\Resources\PreventiveMaintenanceSchedules\Pages\ListPreventiveMa
 use App\Filament\Resources\PreventiveMaintenanceSchedules\RelationManagers\ExecutionsRelationManager;
 use App\Filament\Resources\PreventiveMaintenanceSchedules\Schemas\PreventiveMaintenanceScheduleForm;
 use App\Filament\Resources\PreventiveMaintenanceSchedules\Tables\PreventiveMaintenanceSchedulesTable;
+use App\Filament\Resources\ShieldResource as Resource;
 use App\Models\PreventiveMaintenanceSchedule;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Assets\Tables;
 
 use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ChangeLocationBulkAction;
 use App\Filament\Actions\ChangeSupplierBulkAction;
 use App\Filament\Actions\ExportPdfAction;
@@ -30,6 +31,11 @@ class AssetsTable
                 TextColumn::make('asset_tag')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('department.name')
+                    ->label('Department')
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('assetModel.name')
                     ->label('Asset Model')
@@ -131,12 +137,13 @@ class AssetsTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('assets'),
                     ChangeCategoryBulkAction::make(InventoryCategoryType::Asset, 'assets'),
                     ChangeLocationBulkAction::make('assets'),
                     ChangeSupplierBulkAction::make('assets'),
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category', 'location', 'statusLabel', 'assetModel', 'supplier']));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category', 'location', 'statusLabel', 'assetModel', 'supplier', 'department']));
     }
 }

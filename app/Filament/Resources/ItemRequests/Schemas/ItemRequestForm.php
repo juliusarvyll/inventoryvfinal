@@ -35,15 +35,17 @@ class ItemRequestForm
                         }
 
                         $set('requested_by', $user->name);
-                        $set('department', $user->department);
+                        $set('department_id', $user->primaryDepartment()?->id);
                     }),
                 TextInput::make('requested_by')
                     ->label('Requested By (User Name)')
                     ->required()
                     ->maxLength(255),
-                TextInput::make('department')
+                Select::make('department_id')
+                    ->relationship('department', 'name')
                     ->required()
-                    ->maxLength(255),
+                    ->searchable()
+                    ->preload(),
                 Textarea::make('items')
                     ->required()
                     ->rows(3)

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class ItemRequest extends Model
 {
     /** @use HasFactory<ItemRequestFactory> */
-    use HasFactory;
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
@@ -22,7 +22,7 @@ class ItemRequest extends Model
         'user_id',
         'requester_name',
         'requested_by',
-        'department',
+        'department_id',
         'requestable_type',
         'requestable_id',
         'status',

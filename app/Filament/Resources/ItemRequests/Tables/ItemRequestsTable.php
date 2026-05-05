@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ItemRequests\Tables;
 
 use App\Actions\Inventory\ApproveItemRequest;
 use App\Enums\ItemRequestStatus;
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ExportPdfAction;
 use App\Filament\Actions\SetItemRequestStatusBulkAction;
 use App\Models\ItemRequest;
@@ -29,7 +30,7 @@ class ItemRequestsTable
                 TextColumn::make('requested_by')
                     ->label('Requested By')
                     ->searchable(),
-                TextColumn::make('department')
+                TextColumn::make('department.name')
                     ->searchable(),
                 TextColumn::make('items')
                     ->limit(40)
@@ -109,7 +110,9 @@ class ItemRequestsTable
                     ->visible(fn (ItemRequest $record): bool => $record->status === ItemRequestStatus::Pending
                         && filled($record->user_id)
                         && filled($record->requestable_type)
-                        && filled($record->requestable_id))
+                        && filled($record->requestable_id)
+                        && (auth()->user()->hasRole('super_admin') || auth()->user()->can('approve_item_request') || $record->department?->head_id === auth()->id())
+                    )
                     ->action(function (ItemRequest $record): void {
                         app(ApproveItemRequest::class)($record, auth()->user());
 
@@ -124,6 +127,7 @@ class ItemRequestsTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('item requests'),
                     SetItemRequestStatusBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),

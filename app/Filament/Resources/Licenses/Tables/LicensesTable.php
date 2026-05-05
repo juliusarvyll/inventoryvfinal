@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Licenses\Tables;
 
 use App\Enums\InventoryCategoryType;
 use App\Filament\Actions\ChangeCategoryBulkAction;
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ChangeManufacturerBulkAction;
 use App\Filament\Actions\ExportPdfAction;
 use App\Models\License;
@@ -27,6 +28,11 @@ class LicensesTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('department.name')
+                    ->label('Department')
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('product_key')
                     ->searchable(),
@@ -105,11 +111,12 @@ class LicensesTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('licenses'),
                     ChangeCategoryBulkAction::make(InventoryCategoryType::License, 'licenses'),
                     ChangeManufacturerBulkAction::make('licenses'),
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category', 'manufacturer']));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['category', 'manufacturer', 'department']));
     }
 }

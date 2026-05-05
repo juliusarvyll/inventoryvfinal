@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Locations\Tables;
 
+use App\Filament\Actions\ChangeDepartmentBulkAction;
 use App\Filament\Actions\ExportPdfAction;
 use App\Filament\Actions\SetParentLocationBulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -19,6 +20,11 @@ class LocationsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('department.name')
+                    ->label('Department')
+                    ->visible(fn () => auth()->user()->hasRole('super_admin'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('address')
                     ->searchable(),
@@ -73,10 +79,11 @@ class LocationsTable
             ->toolbarActions([
                 ExportPdfAction::make(),
                 BulkActionGroup::make([
+                    ChangeDepartmentBulkAction::make('locations'),
                     SetParentLocationBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['parent']));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['parent', 'department']));
     }
 }

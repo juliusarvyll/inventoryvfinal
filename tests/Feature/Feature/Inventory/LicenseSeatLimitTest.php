@@ -16,7 +16,7 @@ test('license assignments cannot exceed the licensed seat count', function () {
     LicenseSeat::factory()->create(['license_id' => $license->getKey()]);
 
     $requestor = User::factory()->create();
-    $handler = User::factory()->itStaff()->create();
+    $handler = User::factory()->admin()->create();
 
     $itemRequest = ItemRequest::query()->create([
         'user_id' => $requestor->getKey(),

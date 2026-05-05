@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Asset extends Model
 {
     /** @use HasFactory<AssetFactory> */
-    use HasFactory;
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
@@ -21,6 +21,7 @@ class Asset extends Model
     protected $fillable = [
         'asset_tag',
         'name',
+        'department_id',
         'asset_model_id',
         'category_id',
         'status_label_id',

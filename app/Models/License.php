@@ -12,13 +12,14 @@ use RuntimeException;
 class License extends Model
 {
     /** @use HasFactory<LicenseFactory> */
-    use HasFactory;
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
         'name',
+        'department_id',
         'product_key',
         'category_id',
         'manufacturer_id',

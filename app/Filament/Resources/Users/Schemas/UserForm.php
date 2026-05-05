@@ -28,7 +28,11 @@ class UserForm
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->dehydrated(fn (?string $state): bool => filled($state)),
                 TextInput::make('employee_id'),
-                TextInput::make('department'),
+                Select::make('departments')
+                    ->relationship('departments', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
                 TextInput::make('job_title'),
                 TextInput::make('phone')
                     ->tel(),

@@ -8,9 +8,9 @@ use App\Filament\Resources\PreventiveMaintenanceChecklists\Pages\ListPreventiveM
 use App\Filament\Resources\PreventiveMaintenanceChecklists\RelationManagers\ItemsRelationManager;
 use App\Filament\Resources\PreventiveMaintenanceChecklists\Schemas\PreventiveMaintenanceChecklistForm;
 use App\Filament\Resources\PreventiveMaintenanceChecklists\Tables\PreventiveMaintenanceChecklistsTable;
+use App\Filament\Resources\ShieldResource as Resource;
 use App\Models\PreventiveMaintenanceChecklist;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;

@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Resources\Assets\AssetResource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -42,5 +43,38 @@ test('super admins can access the shield roles resource', function () {
     $this
         ->actingAs($user)
         ->get('/shield/roles')
+        ->assertOk();
+});
+
+test('resource navigation and access honor shield resource permissions without registered policies', function () {
+    Role::create([
+        'name' => 'panel_user',
+        'guard_name' => 'web',
+    ]);
+
+    $user = User::factory()->create();
+    $user->assignRole('panel_user');
+
+    $this->actingAs($user);
+
+    expect(AssetResource::canAccess())->toBeFalse()
+        ->and(AssetResource::shouldRegisterNavigation())->toBeFalse();
+
+    $this
+        ->get(route('filament.admin.resources.assets.index', absolute: false))
+        ->assertForbidden();
+
+    $permission = Permission::create([
+        'name' => 'ViewAny:Asset',
+        'guard_name' => 'web',
+    ]);
+
+    $user->givePermissionTo($permission);
+
+    expect(AssetResource::canAccess())->toBeTrue()
+        ->and(AssetResource::shouldRegisterNavigation())->toBeTrue();
+
+    $this
+        ->get(route('filament.admin.resources.assets.index', absolute: false))
         ->assertOk();
 });

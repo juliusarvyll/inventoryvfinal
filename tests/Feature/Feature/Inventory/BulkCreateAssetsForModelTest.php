@@ -39,7 +39,7 @@ test('bulk create assets for model creates one asset per pasted serial number', 
 
 test('bulk create assets for model ignores duplicate serial numbers for the same model', function () {
     $assetModel = AssetModel::factory()->create();
-    $available = StatusLabel::factory()->available()->create();
+    $available = StatusLabel::firstOrCreate(['name' => 'Available'], ['color' => '#22c55e', 'type' => 'deployable']);
 
     Asset::factory()->create([
         'asset_model_id' => $assetModel->getKey(),
@@ -58,7 +58,7 @@ test('bulk create assets for model ignores duplicate serial numbers for the same
 });
 
 test('bulk create assets for model rejects serial numbers already assigned to another model', function () {
-    $available = StatusLabel::factory()->available()->create();
+    $available = StatusLabel::firstOrCreate(['name' => 'Available'], ['color' => '#22c55e', 'type' => 'deployable']);
     $assetModel = AssetModel::factory()->create();
     $otherAssetModel = AssetModel::factory()->create();
 

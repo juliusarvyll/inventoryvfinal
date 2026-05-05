@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -29,7 +30,6 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'employee_id' => fake()->unique()->numerify('EMP-####'),
-            'department' => fake()->randomElement(['ICT', 'Operations', 'Finance']),
             'job_title' => fake()->jobTitle(),
             'phone' => fake()->phoneNumber(),
             'location' => fake()->city(),
@@ -42,6 +42,22 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    /**
+     * Configure the model factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            if ($user->departments()->count() === 0) {
+                $department = Department::firstOrCreate(
+                    ['code' => 'ICT'],
+                    ['name' => 'ICT', 'is_active' => true]
+                );
+                $user->departments()->attach($department->id, ['is_primary' => true]);
+            }
+        });
     }
 
     /**

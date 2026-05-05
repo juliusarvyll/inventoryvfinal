@@ -36,7 +36,7 @@ class BulkCreateAssetsForModel
 
         if ($conflictingSerialNumbers !== []) {
             throw ValidationException::withMessages([
-                'serial_numbers' => 'These serial numbers already belong to another asset model: ' . implode(', ', $conflictingSerialNumbers),
+                'serial_numbers' => 'These serial numbers already belong to another asset model: '.implode(', ', $conflictingSerialNumbers),
             ]);
         }
 
@@ -90,14 +90,14 @@ class BulkCreateAssetsForModel
     protected function generateAssetTag(string $seed): string
     {
         $normalizedBase = Str::upper(Str::of($seed)->replaceMatches('/[^A-Za-z0-9]+/', '')->substr(0, 12));
-        $assetTag = 'IMP-' . ($normalizedBase ?: Str::upper(Str::random(12)));
+        $assetTag = 'IMP-'.($normalizedBase ?: Str::upper(Str::random(12)));
 
         if (! Asset::query()->where('asset_tag', $assetTag)->exists()) {
             return $assetTag;
         }
 
         do {
-            $assetTag = 'IMP-' . Str::upper(Str::random(12));
+            $assetTag = 'IMP-'.Str::upper(Str::random(12));
         } while (Asset::query()->where('asset_tag', $assetTag)->exists());
 
         return $assetTag;

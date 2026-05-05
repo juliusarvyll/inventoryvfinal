@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\AssetModelFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,14 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssetModel extends Model
 {
-    /** @use HasFactory<\Database\Factories\AssetModelFactory> */
-    use HasFactory;
+    /** @use HasFactory<AssetModelFactory> */
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
         'name',
+        'department_id',
         'manufacturer_id',
         'category_id',
         'model_number',

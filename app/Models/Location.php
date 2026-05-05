@@ -12,13 +12,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Location extends Model
 {
     /** @use HasFactory<LocationFactory> */
-    use HasFactory;
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
         'name',
+        'department_id',
         'address',
         'city',
         'state',

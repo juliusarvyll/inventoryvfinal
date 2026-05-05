@@ -10,12 +10,12 @@ use App\Models\Location;
 use App\Models\Manufacturer;
 use App\Models\StatusLabel;
 use App\Models\Supplier;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Imports\Exceptions\RowImportFailedException;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
 use Filament\Forms\Components\Select;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -264,10 +264,10 @@ class AssetImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Your asset import has completed and ' . Number::format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
+        $body = 'Your asset import has completed and '.Number::format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' Import completed with warnings: ' . Number::format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' were skipped because of missing or invalid data.';
+            $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
         }
 
         return $body;
@@ -357,7 +357,7 @@ class AssetImporter extends Importer
     }
 
     /**
-     * @return non-empty-string|null  Y-m-d or null when $value is empty
+     * @return non-empty-string|null Y-m-d or null when $value is empty
      */
     protected function parseFlexibleImportDate(mixed $value): ?string
     {
@@ -490,16 +490,16 @@ class AssetImporter extends Importer
         $notes = array_filter([
             $this->normalizeText($this->record->notes),
             $this->normalizeText($this->data['description_specification'] ?? null)
-                ? 'Imported description/specification: ' . $this->normalizeText($this->data['description_specification'])
+                ? 'Imported description/specification: '.$this->normalizeText($this->data['description_specification'])
                 : null,
             $this->normalizeText($this->data['remarks'] ?? null)
-                ? 'Imported remarks: ' . $this->normalizeText($this->data['remarks'])
+                ? 'Imported remarks: '.$this->normalizeText($this->data['remarks'])
                 : null,
             filled($this->data['qty'] ?? null)
-                ? 'Imported quantity: ' . $this->data['qty'] . (filled($this->data['unit'] ?? null) ? ' ' . $this->data['unit'] : '')
+                ? 'Imported quantity: '.$this->data['qty'].(filled($this->data['unit'] ?? null) ? ' '.$this->data['unit'] : '')
                 : null,
             filled($this->rowWarnings)
-                ? 'Import warnings: ' . implode('; ', $this->rowWarnings) . '.'
+                ? 'Import warnings: '.implode('; ', $this->rowWarnings).'.'
                 : null,
         ]);
 
@@ -526,14 +526,14 @@ class AssetImporter extends Importer
             ?: Str::uuid()->toString();
 
         $normalizedBase = Str::upper(Str::of($base)->replaceMatches('/[^A-Za-z0-9]+/', '')->substr(0, 12));
-        $assetTag = 'IMP-' . ($normalizedBase ?: Str::upper(Str::random(12)));
+        $assetTag = 'IMP-'.($normalizedBase ?: Str::upper(Str::random(12)));
 
         if (! Asset::query()->where('asset_tag', $assetTag)->exists()) {
             return $assetTag;
         }
 
         do {
-            $assetTag = 'IMP-' . Str::upper(Str::random(12));
+            $assetTag = 'IMP-'.Str::upper(Str::random(12));
         } while (Asset::query()->where('asset_tag', $assetTag)->exists());
 
         return $assetTag;

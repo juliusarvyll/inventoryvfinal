@@ -41,7 +41,8 @@ class UsersTable
                     ->sortable(),
                 TextColumn::make('employee_id')
                     ->searchable(),
-                TextColumn::make('department')
+                TextColumn::make('departments.name')
+                    ->badge()
                     ->searchable(),
                 TextColumn::make('job_title')
                     ->searchable(),

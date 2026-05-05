@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\AccessoryCheckoutFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AccessoryCheckout extends Model
 {
-    /** @use HasFactory<\Database\Factories\AccessoryCheckoutFactory> */
+    /** @use HasFactory<AccessoryCheckoutFactory> */
     use HasFactory;
 
     /**

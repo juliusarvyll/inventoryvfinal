@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Consumables\Pages;
 
 use App\Filament\Imports\ConsumableImporter;
 use App\Filament\Resources\Consumables\ConsumableResource;
-use Filament\Actions\ImportAction;
 use Filament\Actions\CreateAction;
+use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Validation\Rules\File;
 

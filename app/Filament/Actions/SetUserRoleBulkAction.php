@@ -26,13 +26,14 @@ final class SetUserRoleBulkAction
                     ->preload()
                     ->searchable(),
             ])
-            ->authorizeIndividualRecords('update')
             ->action(function (BulkAction $action, Collection $records, array $data): void {
                 $roles = collect($data['roles'] ?? [])
                     ->filter(fn (mixed $role): bool => filled($role))
                     ->map(fn (mixed $role): string => (string) $role)
                     ->values()
                     ->all();
+
+                $updated = 0;
 
                 foreach ($records as $record) {
                     if (! $record instanceof User) {
@@ -43,12 +44,17 @@ final class SetUserRoleBulkAction
 
                     try {
                         $record->syncRoles($roles);
+                        $updated++;
                     } catch (\Throwable) {
                         $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $action->success();
+                if ($updated > 0) {
+                    $action->success();
+                } else {
+                    $action->failure();
+                }
             })
             ->deselectRecordsAfterCompletion();
     }

@@ -28,7 +28,6 @@ final class SetItemRequestStatusBulkAction
                     ->required()
                     ->native(false),
             ])
-            ->authorizeIndividualRecords('update')
             ->action(function (BulkAction $action, Collection $records, array $data): void {
                 $statusValue = $data['status'] ?? null;
 
@@ -46,6 +45,8 @@ final class SetItemRequestStatusBulkAction
                     return;
                 }
 
+                $updated = 0;
+
                 foreach ($records as $record) {
                     if (! $record instanceof ItemRequest) {
                         $action->reportBulkProcessingFailure();
@@ -56,12 +57,17 @@ final class SetItemRequestStatusBulkAction
                     try {
                         $record->status = $status;
                         $record->save();
+                        $updated++;
                     } catch (\Throwable) {
                         $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $action->success();
+                if ($updated > 0) {
+                    $action->success();
+                } else {
+                    $action->failure();
+                }
             })
             ->deselectRecordsAfterCompletion();
     }

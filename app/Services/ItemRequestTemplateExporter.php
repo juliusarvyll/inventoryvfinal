@@ -3,11 +3,9 @@
 namespace App\Services;
 
 use AnourValar\Office\DocumentService;
-use AnourValar\Office\Format;
 use AnourValar\Office\SheetsService;
 use App\Models\ItemRequest;
 use Illuminate\Support\Str;
-use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ItemRequestTemplateExporter
@@ -22,7 +20,7 @@ class ItemRequestTemplateExporter
 
         $filePath = storage_path('app/generated.docx');
 
-        (new DocumentService())
+        (new DocumentService)
             ->generate(
                 $this->templatePath(),
                 $this->templateData($itemRequest)
@@ -33,20 +31,20 @@ class ItemRequestTemplateExporter
     }
 
     public function download(ItemRequest $itemRequest): StreamedResponse
-{
-    $filename = Str::slug($this->documentReference($itemRequest)).'.docx';
-    $filePath = $this->generate($itemRequest);
+    {
+        $filename = Str::slug($this->documentReference($itemRequest)).'.docx';
+        $filePath = $this->generate($itemRequest);
 
-    return response()->streamDownload(
-        function () use ($filePath): void {
-            echo file_get_contents($filePath);
-        },
-        $filename,
-        [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        ],
-    );
-}
+        return response()->streamDownload(
+            function () use ($filePath): void {
+                echo file_get_contents($filePath);
+            },
+            $filename,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ],
+        );
+    }
 
     public function templatePath(): string
     {
@@ -55,7 +53,7 @@ class ItemRequestTemplateExporter
 
     protected function loadRelationships(ItemRequest $itemRequest): ItemRequest
     {
-        return $itemRequest->loadMissing(['user', 'handler']);
+        return $itemRequest->loadMissing(['user.departments', 'handler', 'department']);
     }
 
     /**
@@ -83,7 +81,7 @@ class ItemRequestTemplateExporter
                 'fulfilled_at' => $this->formatDateTime($itemRequest->fulfilled_at),
                 'requested_by' => $itemRequest->requester_display_name,
                 'requester_email' => $this->stringValue($itemRequest->user?->email),
-                'department' => $this->stringValue($itemRequest->department ?: $itemRequest->user?->department),
+                'department' => $this->stringValue($itemRequest->department?->name ?: $itemRequest->user?->primaryDepartment()?->name),
                 'handler_name' => $this->stringValue($itemRequest->handler?->name),
                 'handler_email' => $this->stringValue($itemRequest->handler?->email),
             ],

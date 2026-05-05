@@ -5,29 +5,40 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable([
-    'name',
-    'email',
-    'password',
-    'employee_id',
-    'department',
-    'job_title',
-    'phone',
-    'location',
-    'avatar',
-    'is_active',
-])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'employee_id',
+        'job_title',
+        'phone',
+        'location',
+        'avatar',
+        'is_active',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'remember_token',
+    ];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
 
@@ -44,6 +55,36 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(Department::class)
+            ->withPivot('is_primary')
+            ->withTimestamps();
+    }
+
+    public function primaryDepartment(): ?Department
+    {
+        return $this->departments()
+            ->wherePivot('is_primary', true)
+            ->first();
+    }
+
+    /**
+     * Check if this user is the head of any department.
+     */
+    public function isDepartmentHead(): bool
+    {
+        return Department::query()->where('head_id', $this->getKey())->exists();
+    }
+
+    /**
+     * Get departments where this user is the head.
+     */
+    public function headOfDepartments(): HasMany
+    {
+        return $this->hasMany(Department::class, 'head_id');
     }
 
     public function assetCheckouts(): HasMany

@@ -2,14 +2,13 @@
 
 namespace App\Exports;
 
-use Filament\Tables\Exports\Export;
 use Filament\Tables\Exports\Concerns\WithChunking;
-use Filament\Tables\Exports\Concerns\WithHeadings;
+use Filament\Tables\Exports\Export;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
 use Maatwebsite\Excel\Concerns\WithHeadings as WithHeadingsInterface;
 
-class CustomCsvExport extends Export implements FromCollection, WithHeadingsInterface, WithCustomCsvSettings, WithChunking
+class CustomCsvExport extends Export implements FromCollection, WithChunking, WithCustomCsvSettings, WithHeadingsInterface
 {
     protected string $header = 'St. Paul University Philippines, ICT Department';
 
@@ -18,6 +17,7 @@ class CustomCsvExport extends Export implements FromCollection, WithHeadingsInte
     public function setHeadings(array $headings): self
     {
         $this->headings = $headings;
+
         return $this;
     }
 

@@ -30,7 +30,6 @@ final class ChangeSupplierBulkAction
                     ->nullable()
                     ->placeholder('None'),
             ])
-            ->authorizeIndividualRecords('update')
             ->action(function (BulkAction $action, Collection $records, array $data): void {
                 $supplierId = $data['supplier_id'] ?? null;
 
@@ -43,6 +42,8 @@ final class ChangeSupplierBulkAction
 
                     return;
                 }
+
+                $updated = 0;
 
                 foreach ($records as $record) {
                     if (! $record instanceof Model) {
@@ -59,12 +60,17 @@ final class ChangeSupplierBulkAction
                         }
 
                         $record->save();
+                        $updated++;
                     } catch (\Throwable) {
                         $action->reportBulkProcessingFailure();
                     }
                 }
 
-                $action->success();
+                if ($updated > 0) {
+                    $action->success();
+                } else {
+                    $action->failure();
+                }
             })
             ->deselectRecordsAfterCompletion();
     }

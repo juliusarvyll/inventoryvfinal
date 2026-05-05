@@ -6,6 +6,7 @@ use App\Enums\ItemRequestStatus;
 use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\Consumable;
+use App\Models\Department;
 use App\Models\ItemRequest;
 use App\Models\License;
 use App\Models\User;
@@ -24,7 +25,7 @@ class ItemRequestFactory extends Factory
             'user_id' => User::factory(),
             'requester_name' => $requesterName,
             'requested_by' => $requesterName,
-            'department' => fake()->randomElement(['ICT', 'Operations', 'Finance']),
+            'department_id' => Department::factory(),
             'requestable_type' => null,
             'requestable_id' => null,
             'status' => ItemRequestStatus::Pending,
