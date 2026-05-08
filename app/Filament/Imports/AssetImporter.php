@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Department;
 use App\Models\Location;
 use App\Models\Manufacturer;
+use App\Models\Scopes\DepartmentScope;
 use App\Models\StatusLabel;
 use App\Models\Supplier;
 use Carbon\CarbonImmutable;
@@ -93,7 +94,8 @@ class AssetImporter extends Importer
                 ->guess(['Category'])
                 ->helperText('If blank, the importer infers it from the asset name.')
                 ->validationAttribute('category')
-                ->rules(['required']),
+                ->rules(['required'])
+                ->fillRecordUsing(fn (): null => null),
             ImportColumn::make('statusLabel')
                 ->label('Status Label')
                 ->guess(['Status Label'])
@@ -214,12 +216,12 @@ class AssetImporter extends Importer
     public function getValidationMessages(): array
     {
         return [
-            'name.required' => 'System error, please contact support. Asset name column is required — this row will be skipped.',
-            'assetModel.required' => 'System error, please contact support. The asset model could not be determined — this row will be skipped.',
-            'category.required' => 'System error, please contact support. The category could not be determined — this row will be skipped.',
-            'statusLabel.required' => 'System error, please contact support. The status label could not be determined — this row will be skipped.',
-            'requestable.required' => 'System error, please contact support. The requestable value could not be determined — this row will be skipped.',
-            'serial.duplicate' => 'System error, please contact support. The serial is already assigned to another asset — this row will be skipped.',
+            'name.required' => ' Asset name column is required — this row will be skipped.',
+            'assetModel.required' => ' The asset model could not be determined — this row will be skipped.',
+            'category.required' => ' The category could not be determined — this row will be skipped.',
+            'statusLabel.required' => ' The status label could not be determined — this row will be skipped.',
+            'requestable.required' => ' The requestable value could not be determined — this row will be skipped.',
+            'serial.duplicate' => ' The serial is already assigned to another asset — this row will be skipped.',
         ];
     }
 
@@ -230,7 +232,7 @@ class AssetImporter extends Importer
 
         $categoryName = $this->data['category'] ?? '';
         $category = Category::query()
-            ->withoutGlobalScopes('department')
+            ->withoutGlobalScopes([DepartmentScope::class])
             ->where('type', InventoryCategoryType::Asset)
             ->whereRaw('LOWER(name) = LOWER(?)', [$categoryName])
             ->first();
@@ -249,7 +251,7 @@ class AssetImporter extends Importer
 
         $statusLabelName = $this->data['statusLabel'] ?? '';
         $statusLabel = StatusLabel::query()
-            ->withoutGlobalScopes('department')
+            ->withoutGlobalScopes([DepartmentScope::class])
             ->whereRaw('LOWER(name) = LOWER(?)', [$statusLabelName])
             ->where('type', 'deployable')
             ->first();
@@ -269,6 +271,7 @@ class AssetImporter extends Importer
         if (filled($this->data['supplier'] ?? null)) {
             $supplierName = $this->data['supplier'];
             $supplier = Supplier::query()
+                ->withoutGlobalScopes([DepartmentScope::class])
                 ->whereRaw('LOWER(name) = LOWER(?)', [$supplierName])
                 ->first();
 
@@ -287,6 +290,7 @@ class AssetImporter extends Importer
         if (filled($this->data['location'] ?? null)) {
             $locationName = $this->data['location'];
             $location = Location::query()
+                ->withoutGlobalScopes([DepartmentScope::class])
                 ->whereRaw('LOWER(name) = LOWER(?)', [$locationName])
                 ->first();
 
@@ -323,40 +327,13 @@ class AssetImporter extends Importer
         }
     }
 
-    protected function resolveDepartment(): Department
-    {
-        $user = auth()->user();
-
-        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
-            $department = Department::query()->find($this->options['import_department_id']);
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-
-            return $department;
-        }
-
-        if ($user && $user->primaryDepartment()) {
-            $department = $user->primaryDepartment();
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-
-            return $department;
-        }
-
-        $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
-
-        if ($department->wasRecentlyCreated) {
-            $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
-        } else {
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-        }
-
-        return $department;
-    }
-
     public static function getCompletedNotificationBody(Import $import): string
     {
         $body = 'Your asset import has completed and '.Number::format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
-        if ($failedRowsCount = $import->getFailedRowsCount()) {
+        $failedRowsCount = $import->getFailedRowsCount();
+
+        if ($failedRowsCount > 0) {
             $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
             $body .= ' If you see "system error" messages, please contact support.';
         }
@@ -479,7 +456,7 @@ class AssetImporter extends Importer
             $display = is_scalar($raw) ? (string) $raw : json_encode($raw);
 
             throw ValidationException::withMessages([
-                $column => "Could not parse date [{$display}]. Try a format like 2026-04-15, 15/04/2026, or April 15 2026.",
+                $column => "Could not parse date [{$display}]. Try a format like 2026-04-15, 15/04/2026, or April 15, 2026.",
             ]);
         }
 
@@ -606,6 +583,35 @@ class AssetImporter extends Importer
             'category_id' => $category->getKey(),
             'model_number' => null,
         ]);
+    }
+
+    protected function resolveDepartment(): Department
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            $department = Department::query()->find($this->options['import_department_id']);
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+
+            return $department;
+        }
+
+        if ($user && $user->primaryDepartment()) {
+            $department = $user->primaryDepartment();
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+
+            return $department;
+        }
+
+        $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
+
+        if ($department->wasRecentlyCreated) {
+            $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
+        } else {
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+        }
+
+        return $department;
     }
 
     protected function resolveImportedManufacturer(): Manufacturer
