@@ -642,35 +642,6 @@ class AssetImporter extends Importer
         ]);
     }
 
-    protected function resolveDepartment(): Department
-    {
-        $user = auth()->user();
-
-        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
-            $department = Department::query()->find($this->options['import_department_id']);
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-
-            return $department;
-        }
-
-        if ($user && $user->primaryDepartment()) {
-            $department = $user->primaryDepartment();
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-
-            return $department;
-        }
-
-        $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
-
-        if ($department->wasRecentlyCreated) {
-            $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
-        } else {
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-        }
-
-        return $department;
-    }
-
     protected function resolveImportedManufacturer(): Manufacturer
     {
         return Manufacturer::query()->firstOrCreate([
