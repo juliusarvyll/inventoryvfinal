@@ -91,59 +91,23 @@ class AssetImporter extends Importer
             ImportColumn::make('category')
                 ->label('Category')
                 ->guess(['Category'])
-                ->relationship(resolveUsing: function (string $state): Category {
-                    $record = Category::query()
-                        ->where('type', InventoryCategoryType::Asset)
-                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
-                        ->first();
-
-                    return $record ?? Category::create([
-                        'name' => $state,
-                        'type' => InventoryCategoryType::Asset,
-                    ]);
-                })
                 ->helperText('If blank, the importer infers it from the asset name.')
                 ->validationAttribute('category')
                 ->rules(['required']),
             ImportColumn::make('statusLabel')
                 ->label('Status Label')
                 ->guess(['Status Label'])
-                ->relationship(resolveUsing: function (string $state): StatusLabel {
-                    $record = StatusLabel::query()
-                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
-                        ->where('type', 'deployable')
-                        ->first();
-
-                    return $record ?? StatusLabel::create([
-                        'name' => $state,
-                        'type' => 'deployable',
-                    ]);
-                })
                 ->helperText('If blank, the importer defaults to Available.')
                 ->validationAttribute('status label')
                 ->rules(['required']),
             ImportColumn::make('supplier')
                 ->label('Supplier')
                 ->guess(['Supplier'])
-                ->relationship(resolveUsing: function (string $state): Supplier {
-                    $record = Supplier::query()
-                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
-                        ->first();
-
-                    return $record ?? Supplier::create(['name' => $state]);
-                })
                 ->ignoreBlankState()
                 ->helperText('Optional. New suppliers are created when needed.'),
             ImportColumn::make('location')
                 ->label('Location')
                 ->guess(['Location', 'Location/Room'])
-                ->relationship(resolveUsing: function (string $state): Location {
-                    $record = Location::query()
-                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
-                        ->first();
-
-                    return $record ?? Location::create(['name' => $state]);
-                })
                 ->ignoreBlankState()
                 ->helperText('Optional. New locations are created when needed.'),
             ImportColumn::make('serial')
@@ -266,6 +230,7 @@ class AssetImporter extends Importer
 
         $categoryName = $this->data['category'] ?? '';
         $category = Category::query()
+            ->withoutGlobalScopes('department')
             ->where('type', InventoryCategoryType::Asset)
             ->whereRaw('LOWER(name) = LOWER(?)', [$categoryName])
             ->first();
@@ -284,6 +249,7 @@ class AssetImporter extends Importer
 
         $statusLabelName = $this->data['statusLabel'] ?? '';
         $statusLabel = StatusLabel::query()
+            ->withoutGlobalScopes('department')
             ->whereRaw('LOWER(name) = LOWER(?)', [$statusLabelName])
             ->where('type', 'deployable')
             ->first();
