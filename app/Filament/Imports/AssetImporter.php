@@ -6,6 +6,7 @@ use App\Enums\InventoryCategoryType;
 use App\Models\Asset;
 use App\Models\AssetModel;
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Location;
 use App\Models\Manufacturer;
 use App\Models\StatusLabel;
@@ -30,6 +31,16 @@ class AssetImporter extends Importer
      */
     protected array $rowWarnings = [];
 
+    /**
+     * @var array<string, int>
+     */
+    protected array $createdCounts = [];
+
+    /**
+     * @var array<string, int>
+     */
+    protected array $reusedCounts = [];
+
     public static function getOptionsFormComponents(): array
     {
         return [
@@ -43,6 +54,16 @@ class AssetImporter extends Importer
                 ->searchable()
                 ->preload()
                 ->helperText('Optional. Used when a CSV row does not include a category.'),
+            Select::make('import_department_id')
+                ->label('Import Department')
+                ->options(fn (): array => Department::query()
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->searchable()
+                ->preload()
+                ->visible(fn (): bool => auth()->user()?->hasRole('super_admin') ?? false)
+                ->helperText('Super admins can select the department for imported assets. Others use their assigned department.'),
         ];
     }
 
@@ -70,37 +91,59 @@ class AssetImporter extends Importer
             ImportColumn::make('category')
                 ->label('Category')
                 ->guess(['Category'])
-                ->relationship(resolveUsing: fn (string $state): Category => Category::query()->firstOrCreate([
-                    'name' => $state,
-                    'type' => InventoryCategoryType::Asset,
-                ]))
+                ->relationship(resolveUsing: function (string $state): Category {
+                    $record = Category::query()
+                        ->where('type', InventoryCategoryType::Asset)
+                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
+                        ->first();
+
+                    return $record ?? Category::create([
+                        'name' => $state,
+                        'type' => InventoryCategoryType::Asset,
+                    ]);
+                })
                 ->helperText('If blank, the importer infers it from the asset name.')
                 ->validationAttribute('category')
                 ->rules(['required']),
             ImportColumn::make('statusLabel')
                 ->label('Status Label')
                 ->guess(['Status Label'])
-                ->relationship(resolveUsing: fn (string $state): StatusLabel => StatusLabel::query()->firstOrCreate(
-                    ['name' => $state],
-                    ['type' => 'deployable']
-                ))
+                ->relationship(resolveUsing: function (string $state): StatusLabel {
+                    $record = StatusLabel::query()
+                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
+                        ->where('type', 'deployable')
+                        ->first();
+
+                    return $record ?? StatusLabel::create([
+                        'name' => $state,
+                        'type' => 'deployable',
+                    ]);
+                })
                 ->helperText('If blank, the importer defaults to Available.')
                 ->validationAttribute('status label')
                 ->rules(['required']),
             ImportColumn::make('supplier')
                 ->label('Supplier')
                 ->guess(['Supplier'])
-                ->relationship(resolveUsing: fn (string $state): Supplier => Supplier::query()->firstOrCreate([
-                    'name' => $state,
-                ]))
+                ->relationship(resolveUsing: function (string $state): Supplier {
+                    $record = Supplier::query()
+                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
+                        ->first();
+
+                    return $record ?? Supplier::create(['name' => $state]);
+                })
                 ->ignoreBlankState()
                 ->helperText('Optional. New suppliers are created when needed.'),
             ImportColumn::make('location')
                 ->label('Location')
                 ->guess(['Location', 'Location/Room'])
-                ->relationship(resolveUsing: fn (string $state): Location => Location::query()->firstOrCreate([
-                    'name' => $state,
-                ]))
+                ->relationship(resolveUsing: function (string $state): Location {
+                    $record = Location::query()
+                        ->whereRaw('LOWER(name) = LOWER(?)', [$state])
+                        ->first();
+
+                    return $record ?? Location::create(['name' => $state]);
+                })
                 ->ignoreBlankState()
                 ->helperText('Optional. New locations are created when needed.'),
             ImportColumn::make('serial')
@@ -174,9 +217,15 @@ class AssetImporter extends Importer
         $this->prepareData();
 
         if (filled($this->data['asset_tag'])) {
-            return Asset::firstOrNew([
-                'asset_tag' => $this->data['asset_tag'],
-            ]);
+            $existing = Asset::query()
+                ->where('asset_tag', $this->data['asset_tag'])
+                ->first();
+
+            if ($existing) {
+                $this->reusedCounts['assets'] = ($this->reusedCounts['assets'] ?? 0) + 1;
+
+                return $existing;
+            }
         }
 
         if (filled($this->data['serial'])) {
@@ -185,9 +234,13 @@ class AssetImporter extends Importer
                 ->first();
 
             if ($existingRecord) {
+                $this->reusedCounts['assets'] = ($this->reusedCounts['assets'] ?? 0) + 1;
+
                 return $existingRecord;
             }
         }
+
+        $this->createdCounts['assets'] = ($this->createdCounts['assets'] ?? 0) + 1;
 
         return new Asset([
             'asset_tag' => $this->data['asset_tag'],
@@ -207,24 +260,54 @@ class AssetImporter extends Importer
 
     protected function beforeSave(): void
     {
-        $category = Category::query()->firstOrCreate([
-            'name' => $this->data['category'],
-            'type' => InventoryCategoryType::Asset,
-        ]);
+        $categoryName = $this->data['category'] ?? '';
+        $category = Category::query()
+            ->where('type', InventoryCategoryType::Asset)
+            ->whereRaw('LOWER(name) = LOWER(?)', [$categoryName])
+            ->first();
+
+        if (! $category) {
+            $category = Category::create([
+                'name' => $categoryName,
+                'type' => InventoryCategoryType::Asset,
+            ]);
+            $this->createdCounts['categories'] = ($this->createdCounts['categories'] ?? 0) + 1;
+        } else {
+            $this->reusedCounts['categories'] = ($this->reusedCounts['categories'] ?? 0) + 1;
+        }
 
         $this->record->category()->associate($category);
 
-        $statusLabel = StatusLabel::query()->firstOrCreate(
-            ['name' => $this->data['statusLabel']],
-            ['type' => 'deployable']
-        );
+        $statusLabelName = $this->data['statusLabel'] ?? '';
+        $statusLabel = StatusLabel::query()
+            ->whereRaw('LOWER(name) = LOWER(?)', [$statusLabelName])
+            ->where('type', 'deployable')
+            ->first();
+
+        if (! $statusLabel) {
+            $statusLabel = StatusLabel::create([
+                'name' => $statusLabelName,
+                'type' => 'deployable',
+            ]);
+            $this->createdCounts['status_labels'] = ($this->createdCounts['status_labels'] ?? 0) + 1;
+        } else {
+            $this->reusedCounts['status_labels'] = ($this->reusedCounts['status_labels'] ?? 0) + 1;
+        }
 
         $this->record->statusLabel()->associate($statusLabel);
 
         if (filled($this->data['supplier'] ?? null)) {
-            $supplier = Supplier::query()->firstOrCreate([
-                'name' => $this->data['supplier'],
-            ]);
+            $supplierName = $this->data['supplier'];
+            $supplier = Supplier::query()
+                ->whereRaw('LOWER(name) = LOWER(?)', [$supplierName])
+                ->first();
+
+            if (! $supplier) {
+                $supplier = Supplier::create(['name' => $supplierName]);
+                $this->createdCounts['suppliers'] = ($this->createdCounts['suppliers'] ?? 0) + 1;
+            } else {
+                $this->reusedCounts['suppliers'] = ($this->reusedCounts['suppliers'] ?? 0) + 1;
+            }
 
             $this->record->supplier()->associate($supplier);
         } else {
@@ -232,9 +315,17 @@ class AssetImporter extends Importer
         }
 
         if (filled($this->data['location'] ?? null)) {
-            $location = Location::query()->firstOrCreate([
-                'name' => $this->data['location'],
-            ]);
+            $locationName = $this->data['location'];
+            $location = Location::query()
+                ->whereRaw('LOWER(name) = LOWER(?)', [$locationName])
+                ->first();
+
+            if (! $location) {
+                $location = Location::create(['name' => $locationName]);
+                $this->createdCounts['locations'] = ($this->createdCounts['locations'] ?? 0) + 1;
+            } else {
+                $this->reusedCounts['locations'] = ($this->reusedCounts['locations'] ?? 0) + 1;
+            }
 
             $this->record->location()->associate($location);
         } else {
@@ -246,6 +337,25 @@ class AssetImporter extends Importer
                 'category' => 'A valid asset category is required. This row will be skipped.',
             ]);
         }
+
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            $department = Department::query()->find($this->options['import_department_id']);
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+        } elseif ($user && $user->primaryDepartment()) {
+            $department = $user->primaryDepartment();
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+        } else {
+            $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
+            if ($department->wasRecentlyCreated) {
+                $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
+            } else {
+                $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+            }
+        }
+
+        $this->record->department()->associate($department);
 
         $this->record->assetModel()->associate($this->resolveAssetModel($category));
         $this->record->notes = $this->buildNotes();
@@ -270,7 +380,46 @@ class AssetImporter extends Importer
             $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
         }
 
+        $data = $import->data ?? [];
+        $created = $data['created_counts'] ?? [];
+        $reused = $data['reused_counts'] ?? [];
+
+        if (! empty($created) || ! empty($reused)) {
+            $body .= ' Summary:';
+
+            foreach (['assets', 'categories', 'status_labels', 'suppliers', 'locations', 'departments'] as $key) {
+                $createdCount = $created[$key] ?? 0;
+                $reusedCount = $reused[$key] ?? 0;
+
+                if ($createdCount > 0 || $reusedCount > 0) {
+                    $label = str($key)->replace('_', ' ')->title();
+                    $parts = [];
+
+                    if ($createdCount > 0) {
+                        $parts[] = "{$createdCount} new";
+                    }
+                    if ($reusedCount > 0) {
+                        $parts[] = "{$reusedCount} existing";
+                    }
+
+                    $body .= " {$label}: ".implode(', ', $parts).'.';
+                }
+            }
+        }
+
         return $body;
+    }
+
+    public function afterSave(): void
+    {
+        $import = $this->getImport();
+        if ($import) {
+            $data = $import->data ?? [];
+            $data['created_counts'] = $this->createdCounts;
+            $data['reused_counts'] = $this->reusedCounts;
+            $import->data = $data;
+            $import->save();
+        }
     }
 
     protected function prepareData(): void
@@ -526,10 +675,13 @@ class AssetImporter extends Importer
             ?: Str::uuid()->toString();
 
         $normalizedBase = Str::upper(Str::of($base)->replaceMatches('/[^A-Za-z0-9]+/', '')->substr(0, 12));
-        $assetTag = 'IMP-'.($normalizedBase ?: Str::upper(Str::random(12)));
 
-        if (! Asset::query()->where('asset_tag', $assetTag)->exists()) {
-            return $assetTag;
+        if ($normalizedBase) {
+            $assetTag = 'IMP-'.$normalizedBase;
+
+            if (! Asset::query()->where('asset_tag', $assetTag)->exists()) {
+                return $assetTag;
+            }
         }
 
         do {
