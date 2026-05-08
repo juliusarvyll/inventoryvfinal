@@ -250,16 +250,20 @@ class AssetImporter extends Importer
     public function getValidationMessages(): array
     {
         return [
-            'name.required' => 'The asset name column is required. This row will be skipped.',
-            'assetModel.required' => 'The asset model could not be determined. This row will be skipped.',
-            'category.required' => 'The category could not be determined. This row will be skipped.',
-            'statusLabel.required' => 'The status label could not be determined. This row will be skipped.',
-            'requestable.required' => 'The requestable value could not be determined. This row will be skipped.',
+            'name.required' => 'System error, please contact support. Asset name column is required — this row will be skipped.',
+            'assetModel.required' => 'System error, please contact support. The asset model could not be determined — this row will be skipped.',
+            'category.required' => 'System error, please contact support. The category could not be determined — this row will be skipped.',
+            'statusLabel.required' => 'System error, please contact support. The status label could not be determined — this row will be skipped.',
+            'requestable.required' => 'System error, please contact support. The requestable value could not be determined — this row will be skipped.',
+            'serial.duplicate' => 'System error, please contact support. The serial is already assigned to another asset — this row will be skipped.',
         ];
     }
 
     protected function beforeSave(): void
     {
+        $department = $this->resolveDepartment();
+        $this->record->department()->associate($department);
+
         $categoryName = $this->data['category'] ?? '';
         $category = Category::query()
             ->where('type', InventoryCategoryType::Asset)
@@ -338,26 +342,7 @@ class AssetImporter extends Importer
             ]);
         }
 
-        $user = auth()->user();
-
-        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
-            $department = Department::query()->find($this->options['import_department_id']);
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-        } elseif ($user && $user->primaryDepartment()) {
-            $department = $user->primaryDepartment();
-            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-        } else {
-            $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
-            if ($department->wasRecentlyCreated) {
-                $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
-            } else {
-                $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
-            }
-        }
-
-        $this->record->department()->associate($department);
-
-        $this->record->assetModel()->associate($this->resolveAssetModel($category));
+        $this->record->assetModel()->associate($this->resolveAssetModel($category, $department));
         $this->record->notes = $this->buildNotes();
 
         if (
@@ -372,12 +357,42 @@ class AssetImporter extends Importer
         }
     }
 
+    protected function resolveDepartment(): Department
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            $department = Department::query()->find($this->options['import_department_id']);
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+
+            return $department;
+        }
+
+        if ($user && $user->primaryDepartment()) {
+            $department = $user->primaryDepartment();
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+
+            return $department;
+        }
+
+        $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
+
+        if ($department->wasRecentlyCreated) {
+            $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
+        } else {
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+        }
+
+        return $department;
+    }
+
     public static function getCompletedNotificationBody(Import $import): string
     {
         $body = 'Your asset import has completed and '.Number::format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
             $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
+            $body .= ' If you see "system error" messages, please contact support.';
         }
 
         $data = $import->data ?? [];
@@ -603,7 +618,7 @@ class AssetImporter extends Importer
         return null;
     }
 
-    protected function resolveAssetModel(Category $category): AssetModel
+    protected function resolveAssetModel(Category $category, Department $department): AssetModel
     {
         $state = Str::limit($this->normalizeText($this->data['assetModel'] ?? null) ?: $this->record->name, 255, '');
 
@@ -625,6 +640,35 @@ class AssetImporter extends Importer
             'category_id' => $category->getKey(),
             'model_number' => null,
         ]);
+    }
+
+    protected function resolveDepartment(): Department
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            $department = Department::query()->find($this->options['import_department_id']);
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+
+            return $department;
+        }
+
+        if ($user && $user->primaryDepartment()) {
+            $department = $user->primaryDepartment();
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+
+            return $department;
+        }
+
+        $department = Department::query()->firstOrCreate(['name' => 'Unassigned']);
+
+        if ($department->wasRecentlyCreated) {
+            $this->createdCounts['departments'] = ($this->createdCounts['departments'] ?? 0) + 1;
+        } else {
+            $this->reusedCounts['departments'] = ($this->reusedCounts['departments'] ?? 0) + 1;
+        }
+
+        return $department;
     }
 
     protected function resolveImportedManufacturer(): Manufacturer
