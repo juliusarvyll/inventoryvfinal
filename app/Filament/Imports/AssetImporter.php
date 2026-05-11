@@ -300,6 +300,10 @@ class AssetImporter extends Importer
                 ]);
                 $this->createdCounts['suppliers'] = ($this->createdCounts['suppliers'] ?? 0) + 1;
             } else {
+                if (! $supplier->department_id) {
+                    $supplier->department_id = $department->getKey();
+                    $supplier->save();
+                }
                 $this->reusedCounts['suppliers'] = ($this->reusedCounts['suppliers'] ?? 0) + 1;
             }
 
