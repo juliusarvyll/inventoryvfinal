@@ -15,12 +15,12 @@ class PreventiveMaintenanceExecutionForm
     /**
      * @return array{checklist_items: array}
      */
-    public static function executionFormData(PreventiveMaintenanceSchedule $schedule): array
+    public static function executionFormData(PreventiveMaintenanceSchedule $schedule, PreventiveMaintenanceChecklist $checklist): array
     {
-        $schedule->loadMissing('checklist.items');
+        $checklist->loadMissing('items');
 
         return [
-            'checklist_items' => $schedule->checklist->items->map(fn ($item): array => [
+            'checklist_items' => $checklist->items->map(fn ($item): array => [
                 'id' => $item->getKey(),
                 'task' => $item->task,
                 'input_label' => $item->input_label,

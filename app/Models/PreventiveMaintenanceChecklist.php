@@ -18,7 +18,6 @@ class PreventiveMaintenanceChecklist extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'category_id',
         'is_active',
         'created_by',
         'updated_by',
@@ -29,11 +28,6 @@ class PreventiveMaintenanceChecklist extends Model
         return [
             'is_active' => 'boolean',
         ];
-    }
-
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
     }
 
     public function categories(): BelongsToMany
