@@ -5,8 +5,9 @@
             "type": "local",
             "enabled": true,
             "command": [
-                "php",
-                "artisan",
+                "wsl.exe",
+                "/usr/bin/php8.3",
+                "/home/julius/inventoryvfinal/artisan",
                 "boost:mcp"
             ]
         }

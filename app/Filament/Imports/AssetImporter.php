@@ -28,6 +28,21 @@ class AssetImporter extends Importer
     protected static ?string $model = Asset::class;
 
     /**
+     * @var list<string>
+     */
+    protected const IMPORT_ONLY_COLUMNS = [
+        'assetModel',
+        'description_specification',
+        'import_category',
+        'import_location',
+        'import_status_label',
+        'import_supplier',
+        'qty',
+        'remarks',
+        'unit',
+    ];
+
+    /**
      * @var array<int, string>
      */
     protected array $rowWarnings = [];
@@ -89,28 +104,31 @@ class AssetImporter extends Importer
                 ->requiredMappingForNewRecordsOnly()
                 ->fillRecordUsing(fn (): null => null)
                 ->rules(['required', 'max:255']),
-            ImportColumn::make('category')
+            ImportColumn::make('import_category')
                 ->label('Category')
                 ->guess(['Category'])
                 ->helperText('If blank, the importer infers it from the asset name.')
                 ->validationAttribute('category')
                 ->rules(['required'])
                 ->fillRecordUsing(fn (): null => null),
-            ImportColumn::make('statusLabel')
+            ImportColumn::make('import_status_label')
                 ->label('Status Label')
                 ->guess(['Status Label'])
                 ->helperText('If blank, the importer defaults to Available.')
                 ->validationAttribute('status label')
-                ->rules(['required']),
-            ImportColumn::make('supplier')
+                ->rules(['required'])
+                ->fillRecordUsing(fn (): null => null),
+            ImportColumn::make('import_supplier')
                 ->label('Supplier')
                 ->guess(['Supplier'])
                 ->ignoreBlankState()
+                ->fillRecordUsing(fn (): null => null)
                 ->helperText('Optional. New suppliers are created when needed.'),
-            ImportColumn::make('location')
+            ImportColumn::make('import_location')
                 ->label('Location')
                 ->guess(['Location', 'Location/Room'])
                 ->ignoreBlankState()
+                ->fillRecordUsing(fn (): null => null)
                 ->helperText('Optional. New locations are created when needed.'),
             ImportColumn::make('serial')
                 ->label('Serial')
@@ -218,8 +236,8 @@ class AssetImporter extends Importer
         return [
             'name.required' => ' Asset name column is required — this row will be skipped.',
             'assetModel.required' => ' The asset model could not be determined — this row will be skipped.',
-            'category.required' => ' The category could not be determined — this row will be skipped.',
-            'statusLabel.required' => ' The status label could not be determined — this row will be skipped.',
+            'import_category.required' => ' The category could not be determined — this row will be skipped.',
+            'import_status_label.required' => ' The status label could not be determined — this row will be skipped.',
             'requestable.required' => ' The requestable value could not be determined — this row will be skipped.',
             'serial.duplicate' => ' The serial is already assigned to another asset — this row will be skipped.',
         ];
@@ -230,7 +248,7 @@ class AssetImporter extends Importer
         $department = $this->resolveDepartment();
         $this->record->department()->associate($department);
 
-        $categoryName = $this->data['category'] ?? '';
+        $categoryName = $this->data['import_category'] ?? '';
         $category = Category::query()
             ->withoutGlobalScopes([DepartmentScope::class])
             ->where('type', InventoryCategoryType::Asset)
@@ -249,7 +267,7 @@ class AssetImporter extends Importer
 
         $this->record->category()->associate($category);
 
-        $statusLabelName = $this->data['statusLabel'] ?? '';
+        $statusLabelName = $this->data['import_status_label'] ?? '';
         $statusLabel = StatusLabel::query()
             ->withoutGlobalScopes([DepartmentScope::class])
             ->whereRaw('LOWER(name) = LOWER(?)', [$statusLabelName])
@@ -268,15 +286,18 @@ class AssetImporter extends Importer
 
         $this->record->statusLabel()->associate($statusLabel);
 
-        if (filled($this->data['supplier'] ?? null)) {
-            $supplierName = $this->data['supplier'];
+        if (filled($this->data['import_supplier'] ?? null)) {
+            $supplierName = $this->data['import_supplier'];
             $supplier = Supplier::query()
                 ->withoutGlobalScopes([DepartmentScope::class])
                 ->whereRaw('LOWER(name) = LOWER(?)', [$supplierName])
                 ->first();
 
             if (! $supplier) {
-                $supplier = Supplier::create(['name' => $supplierName]);
+                $supplier = Supplier::create([
+                    'name' => $supplierName,
+                    'department_id' => $department->getKey(),
+                ]);
                 $this->createdCounts['suppliers'] = ($this->createdCounts['suppliers'] ?? 0) + 1;
             } else {
                 $this->reusedCounts['suppliers'] = ($this->reusedCounts['suppliers'] ?? 0) + 1;
@@ -287,15 +308,18 @@ class AssetImporter extends Importer
             $this->record->supplier()->dissociate();
         }
 
-        if (filled($this->data['location'] ?? null)) {
-            $locationName = $this->data['location'];
+        if (filled($this->data['import_location'] ?? null)) {
+            $locationName = $this->data['import_location'];
             $location = Location::query()
                 ->withoutGlobalScopes([DepartmentScope::class])
                 ->whereRaw('LOWER(name) = LOWER(?)', [$locationName])
                 ->first();
 
             if (! $location) {
-                $location = Location::create(['name' => $locationName]);
+                $location = Location::create([
+                    'name' => $locationName,
+                    'department_id' => $department->getKey(),
+                ]);
                 $this->createdCounts['locations'] = ($this->createdCounts['locations'] ?? 0) + 1;
             } else {
                 $this->reusedCounts['locations'] = ($this->reusedCounts['locations'] ?? 0) + 1;
@@ -308,12 +332,13 @@ class AssetImporter extends Importer
 
         if (! $category) {
             throw ValidationException::withMessages([
-                'category' => 'A valid asset category is required. This row will be skipped.',
+                'import_category' => 'A valid asset category is required. This row will be skipped.',
             ]);
         }
 
         $this->record->assetModel()->associate($this->resolveAssetModel($category, $department));
         $this->record->notes = $this->buildNotes();
+        $this->removeImportOnlyAttributesFromRecord();
 
         if (
             filled($this->record->serial)
@@ -324,6 +349,13 @@ class AssetImporter extends Importer
             })->exists()
         ) {
             throw new RowImportFailedException("The serial [{$this->record->serial}] is already assigned to another asset.");
+        }
+    }
+
+    protected function removeImportOnlyAttributesFromRecord(): void
+    {
+        foreach (self::IMPORT_ONLY_COLUMNS as $column) {
+            unset($this->record->{$column});
         }
     }
 
@@ -396,12 +428,12 @@ class AssetImporter extends Importer
 
         $this->data['name'] = Str::limit($name, 255, '');
 
-        if (blank($this->data['category'] ?? null)) {
+        if (blank($this->data['import_category'] ?? null)) {
             if ($defaultCategory = $this->resolveDefaultCategory()) {
-                $this->data['category'] = $defaultCategory->name;
+                $this->data['import_category'] = $defaultCategory->name;
                 $this->rowWarnings[] = 'category defaulted from the import option';
             } else {
-                $this->data['category'] = $this->data['name'];
+                $this->data['import_category'] = $this->data['name'];
                 $this->rowWarnings[] = 'category was inferred from the asset name';
             }
         }
@@ -411,8 +443,8 @@ class AssetImporter extends Importer
             $this->rowWarnings[] = 'asset model was inferred from the description or asset name';
         }
 
-        if (blank($this->data['statusLabel'] ?? null)) {
-            $this->data['statusLabel'] = $this->inferStatusLabel($remarks);
+        if (blank($this->data['import_status_label'] ?? null)) {
+            $this->data['import_status_label'] = $this->inferStatusLabel($remarks);
             $this->rowWarnings[] = 'status label defaulted from the row remarks';
         }
 

@@ -1,6 +1,7 @@
 {
     "agents": [
-        "opencode"
+        "opencode",
+        "claude_code"
     ],
     "guidelines": true,
     "mcp": true,
@@ -14,7 +15,6 @@
         "laravel-best-practices",
         "wayfinder-development",
         "pest-testing",
-        "inertia-react-development",
         "tailwindcss-development"
     ]
 }
