@@ -5,7 +5,9 @@ namespace App\Filament\Imports;
 use App\Enums\InventoryCategoryType;
 use App\Models\Category;
 use App\Models\Component;
+use App\Models\Department;
 use App\Models\Location;
+use App\Models\Scopes\DepartmentScope;
 use App\Models\Supplier;
 use Filament\Actions\Imports\Exceptions\RowImportFailedException;
 use Filament\Actions\Imports\ImportColumn;
@@ -31,6 +33,16 @@ class ComponentImporter extends Importer
                 ->searchable()
                 ->preload()
                 ->helperText('Optional. Used when a CSV row does not include a category.'),
+            Select::make('import_department_id')
+                ->label('Import Department')
+                ->options(fn (): array => Department::query()
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->searchable()
+                ->preload()
+                ->visible(fn (): bool => auth()->user()?->hasRole('super_admin') ?? false)
+                ->helperText('Super admins can select the department for imported components. Others use their assigned department.'),
         ];
     }
 
@@ -93,10 +105,12 @@ class ComponentImporter extends Importer
         $this->prepareData();
 
         $category = $this->resolveCategory();
+        $department = $this->resolveDepartment();
 
         if (filled($this->data['serial'] ?? null)) {
-            $existingRecord = Component::query()
+            $existingRecord = Component::withoutGlobalScope(DepartmentScope::class)
                 ->where('serial', $this->data['serial'])
+                ->where('department_id', $department->getKey())
                 ->first();
 
             if ($existingRecord) {
@@ -104,10 +118,15 @@ class ComponentImporter extends Importer
             }
         }
 
-        return Component::query()->firstOrNew([
+        $record = Component::withoutGlobalScope(DepartmentScope::class)->firstOrNew([
             'name' => $this->data['name'],
             'category_id' => $category->getKey(),
+            'department_id' => $department->getKey(),
         ]);
+
+        $record->department_id = $department->getKey();
+
+        return $record;
     }
 
     public function getValidationMessages(): array
@@ -204,6 +223,24 @@ class ComponentImporter extends Importer
         $normalizedValue = trim((string) $value);
 
         return $normalizedValue === '' ? null : $normalizedValue;
+    }
+
+    protected function resolveDepartment(): Department
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            return Department::query()->find($this->options['import_department_id']);
+        }
+
+        if ($user && $user->primaryDepartment()) {
+            return $user->primaryDepartment();
+        }
+
+        return Department::query()->firstOrCreate(
+            ['code' => 'DEFAULT'],
+            ['name' => 'Unassigned', 'is_active' => true],
+        );
     }
 
     protected function resolveDefaultCategory(): ?Category

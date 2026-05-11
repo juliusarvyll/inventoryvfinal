@@ -597,8 +597,9 @@ class AssetImporter extends Importer
     {
         $state = Str::limit($this->normalizeText($this->data['assetModel'] ?? null) ?: $this->record->name, 255, '');
 
-        $existingRecord = AssetModel::query()
+        $existingRecord = AssetModel::withoutGlobalScope(DepartmentScope::class)
             ->where('category_id', $category->getKey())
+            ->where('department_id', $department->getKey())
             ->where(function ($query) use ($state): void {
                 $query->where('name', $state)
                     ->orWhere('model_number', $state);
@@ -609,10 +610,11 @@ class AssetImporter extends Importer
             return $existingRecord;
         }
 
-        return AssetModel::query()->create([
+        return AssetModel::create([
             'name' => $state,
             'manufacturer_id' => $this->resolveImportedManufacturer()->getKey(),
             'category_id' => $category->getKey(),
+            'department_id' => $department->getKey(),
             'model_number' => null,
         ]);
     }

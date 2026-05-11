@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PreventiveMaintenanceSchedule extends Model
 {
     /** @use HasFactory<PreventiveMaintenanceScheduleFactory> */
-    use HasFactory;
+    use Concerns\BelongsToDepartment, HasFactory;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
+        'department_id',
         'location_id',
         'scheduled_for',
         'is_active',

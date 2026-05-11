@@ -5,7 +5,9 @@ namespace App\Filament\Imports;
 use App\Enums\InventoryCategoryType;
 use App\Models\Category;
 use App\Models\Consumable;
+use App\Models\Department;
 use App\Models\Location;
+use App\Models\Scopes\DepartmentScope;
 use App\Models\Supplier;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
@@ -30,6 +32,16 @@ class ConsumableImporter extends Importer
                 ->searchable()
                 ->preload()
                 ->helperText('Optional. Used when a CSV row does not include a category.'),
+            Select::make('import_department_id')
+                ->label('Import Department')
+                ->options(fn (): array => Department::query()
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->searchable()
+                ->preload()
+                ->visible(fn (): bool => auth()->user()?->hasRole('super_admin') ?? false)
+                ->helperText('Super admins can select the department for imported consumables. Others use their assigned department.'),
         ];
     }
 
@@ -92,10 +104,12 @@ class ConsumableImporter extends Importer
         $this->prepareData();
 
         $category = $this->resolveCategory();
+        $department = $this->resolveDepartment();
 
         if (filled($this->data['serial'] ?? null)) {
-            $existingRecord = Consumable::query()
+            $existingRecord = Consumable::withoutGlobalScope(DepartmentScope::class)
                 ->where('serial', $this->data['serial'])
+                ->where('department_id', $department->getKey())
                 ->first();
 
             if ($existingRecord) {
@@ -103,17 +117,20 @@ class ConsumableImporter extends Importer
             }
         }
 
-        $query = Consumable::query()
+        $existingRecord = Consumable::withoutGlobalScope(DepartmentScope::class)
             ->where('name', $this->data['name'])
-            ->where('category_id', $category->getKey());
-
-        $existingRecord = $query->first();
+            ->where('category_id', $category->getKey())
+            ->where('department_id', $department->getKey())
+            ->first();
 
         if ($existingRecord) {
             return $existingRecord;
         }
 
-        return new Consumable;
+        $record = new Consumable;
+        $record->department_id = $department->getKey();
+
+        return $record;
     }
 
     public function getValidationMessages(): array
@@ -199,6 +216,24 @@ class ConsumableImporter extends Importer
         $normalizedValue = trim((string) $value);
 
         return $normalizedValue === '' ? null : $normalizedValue;
+    }
+
+    protected function resolveDepartment(): Department
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            return Department::query()->find($this->options['import_department_id']);
+        }
+
+        if ($user && $user->primaryDepartment()) {
+            return $user->primaryDepartment();
+        }
+
+        return Department::query()->firstOrCreate(
+            ['code' => 'DEFAULT'],
+            ['name' => 'Unassigned', 'is_active' => true],
+        );
     }
 
     protected function resolveDefaultCategory(): ?Category

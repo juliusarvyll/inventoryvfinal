@@ -6,7 +6,9 @@ use App\Actions\Inventory\BulkCreateAssetsForModel;
 use App\Enums\InventoryCategoryType;
 use App\Models\AssetModel;
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Manufacturer;
+use App\Models\Scopes\DepartmentScope;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
@@ -30,6 +32,16 @@ class AssetModelImporter extends Importer
                 ->searchable()
                 ->preload()
                 ->helperText('Optional. Used when a CSV row does not include a category.'),
+            Select::make('import_department_id')
+                ->label('Import Department')
+                ->options(fn (): array => Department::query()
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->searchable()
+                ->preload()
+                ->visible(fn (): bool => auth()->user()?->hasRole('super_admin') ?? false)
+                ->helperText('Super admins can select the department for imported asset models. Others use their assigned department.'),
         ];
     }
 
@@ -73,11 +85,13 @@ class AssetModelImporter extends Importer
         $this->prepareData();
 
         $category = $this->resolveCategory();
+        $department = $this->resolveDepartment();
 
         if (filled($this->data['model_number'] ?? null)) {
-            $existingRecord = AssetModel::query()
+            $existingRecord = AssetModel::withoutGlobalScope(DepartmentScope::class)
                 ->where('category_id', $category->getKey())
                 ->where('model_number', $this->data['model_number'])
+                ->where('department_id', $department->getKey())
                 ->first();
 
             if ($existingRecord) {
@@ -85,10 +99,15 @@ class AssetModelImporter extends Importer
             }
         }
 
-        return AssetModel::query()->firstOrNew([
+        $record = AssetModel::withoutGlobalScope(DepartmentScope::class)->firstOrNew([
             'category_id' => $category->getKey(),
             'name' => $this->data['name'],
+            'department_id' => $department->getKey(),
         ]);
+
+        $record->department_id = $department->getKey();
+
+        return $record;
     }
 
     public function getValidationMessages(): array
@@ -159,6 +178,24 @@ class AssetModelImporter extends Importer
         $normalizedValue = trim((string) $value);
 
         return $normalizedValue === '' ? null : $normalizedValue;
+    }
+
+    protected function resolveDepartment(): Department
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('super_admin') && filled($this->options['import_department_id'] ?? null)) {
+            return Department::query()->find($this->options['import_department_id']);
+        }
+
+        if ($user && $user->primaryDepartment()) {
+            return $user->primaryDepartment();
+        }
+
+        return Department::query()->firstOrCreate(
+            ['code' => 'DEFAULT'],
+            ['name' => 'Unassigned', 'is_active' => true],
+        );
     }
 
     protected function resolveDefaultCategory(): ?Category

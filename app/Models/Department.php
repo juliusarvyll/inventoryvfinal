@@ -73,4 +73,14 @@ class Department extends Model
     {
         return $this->hasMany(AssetModel::class);
     }
+
+    public function preventiveMaintenanceSchedules(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceSchedule::class);
+    }
+
+    public function preventiveMaintenanceExecutions(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceExecution::class);
+    }
 }
