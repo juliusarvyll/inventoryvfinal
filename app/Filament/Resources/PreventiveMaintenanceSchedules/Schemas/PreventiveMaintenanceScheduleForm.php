@@ -42,10 +42,21 @@ class PreventiveMaintenanceScheduleForm
                                 'checklists',
                                 'id',
                                 fn (Builder $query): Builder => $query
-                                    ->where('is_active', true)
+                                    ->where('preventive_maintenance_checklists.is_active', true)
                                     ->with('categories'),
                             )
                             ->getOptionLabelFromRecordUsing(fn ($record): string => $record->categories->pluck('name')->unique()->join(', ') ?: "Checklist #{$record->id}")
+                            ->getSearchResultsUsing(function (string $search) {
+                                return \App\Models\PreventiveMaintenanceChecklist::query()
+                                    ->where('is_active', true)
+                                    ->with('categories')
+                                    ->whereHas('categories', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+                                    ->limit(50)
+                                    ->get()
+                                    ->mapWithKeys(fn ($record) => [
+                                        $record->id => $record->categories->pluck('name')->unique()->join(', ') ?: "Checklist #{$record->id}"
+                                    ]);
+                            })
                             ->searchable()
                             ->preload()
                             ->multiple()

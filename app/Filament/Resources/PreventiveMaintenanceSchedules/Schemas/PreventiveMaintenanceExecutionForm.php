@@ -45,7 +45,15 @@ class PreventiveMaintenanceExecutionForm
                     Hidden::make('id')->required(),
                     Textarea::make('task')->disabled()->dehydrated(false)->rows(2)->columnSpanFull(),
                     Select::make('is_passed')->label('Result')->options(['1' => 'Pass', '0' => 'Fail'])->placeholder('Pending'),
-                    FileUpload::make('evidence_path')->label('Evidence')->disk('public')->directory('preventive-maintenance/evidence')->visibility('public')->acceptedFileTypes(['image/*', 'application/pdf'])->maxSize(5120)->columnSpanFull(),
+                    FileUpload::make('evidence_path')
+                        ->label('Evidence')
+                        ->disk('public')
+                        ->directory('preventive-maintenance/evidence')
+                        ->visibility('public')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'])
+                        ->maxSize(5120)
+                        ->helperText('Upload images (JPEG, PNG, GIF, WebP) or PDF files. Max 5MB.')
+                        ->columnSpanFull(),
                 ])->columnSpanFull(),
             Textarea::make('general_notes')->label('General notes')->rows(4)->columnSpanFull(),
         ];

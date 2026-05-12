@@ -10,7 +10,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
-final class ChangeCategoryBulkAction
+final class ChangeCategoryBulkAction extends BaseBulkUpdateAction
 {
     public static function make(
         InventoryCategoryType $categoryType,
@@ -53,29 +53,13 @@ final class ChangeCategoryBulkAction
                     return;
                 }
 
-                $updated = 0;
-
-                foreach ($records as $record) {
-                    if (! $record instanceof Model) {
-                        $action->reportBulkProcessingFailure();
-
-                        continue;
-                    }
-
-                    try {
-                        $record->category()->associate($category);
-                        $record->save();
-                        $updated++;
-                    } catch (\Throwable) {
-                        $action->reportBulkProcessingFailure();
-                    }
-                }
-
-                if ($updated > 0) {
-                    $action->success();
-                } else {
-                    $action->failure();
-                }
+                self::processRecords(
+                    $action,
+                    $records,
+                    $data,
+                    fn (Model $record) => $record->category()->associate($category),
+                    'bulk_change_category'
+                );
             })
             ->deselectRecordsAfterCompletion();
     }

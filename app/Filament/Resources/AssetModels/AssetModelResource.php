@@ -50,7 +50,7 @@ class AssetModelResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\AssetsRelationManager::class,
         ];
     }
 

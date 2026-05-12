@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Locations\RelationManagers;
+namespace App\Filament\Resources\Suppliers\RelationManagers;
 
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -33,6 +33,10 @@ class AssetsRelationManager extends RelationManager
                     ->label('Model')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('location.name')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
                 TextColumn::make('purchase_date')
                     ->date()
                     ->sortable()

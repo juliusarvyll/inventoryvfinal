@@ -2,13 +2,45 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Database\Factories\PreventiveMaintenanceExecutionFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Preventive Maintenance Execution Model.
+ *
+ * Records a completed or in-progress preventive maintenance session
+ * for a specific asset, including pass/fail results for each checklist item.
+ *
+ * @property int $id
+ * @property int $department_id
+ * @property int $preventive_maintenance_schedule_id
+ * @property int $preventive_maintenance_checklist_id
+ * @property int $location_id
+ * @property int $category_id
+ * @property int $asset_id
+ * @property string $status
+ * @property Carbon|null $scheduled_for
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property int|null $performed_by
+ * @property string|null $general_notes
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Department $department
+ * @property-read PreventiveMaintenanceSchedule $schedule
+ * @property-read PreventiveMaintenanceChecklist $checklist
+ * @property-read Location $location
+ * @property-read Category $category
+ * @property-read Asset $asset
+ * @property-read User|null $performer
+ * @property-read Collection<int, PreventiveMaintenanceExecutionItem> $items
+ */
 class PreventiveMaintenanceExecution extends Model
 {
     /** @use HasFactory<PreventiveMaintenanceExecutionFactory> */

@@ -201,8 +201,9 @@ class PreventiveMaintenanceSchedulesTable
                                                 ->disk('public')
                                                 ->directory('preventive-maintenance/evidence')
                                                 ->visibility('public')
-                                                ->acceptedFileTypes(['image/*', 'application/pdf'])
+                                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'])
                                                 ->maxSize(5120)
+                                                ->helperText('Upload images (JPEG, PNG, GIF, WebP) or PDF files. Max 5MB.')
                                                 ->columnSpanFull(),
                                         ])
                                         ->columnSpanFull(),

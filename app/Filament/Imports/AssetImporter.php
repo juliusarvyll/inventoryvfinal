@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Imports;
 
 use App\Enums\InventoryCategoryType;
@@ -26,6 +28,18 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 class AssetImporter extends Importer
 {
     protected static ?string $model = Asset::class;
+
+    private const ASSET_TAG_PREFIX = 'IMP-';
+
+    private const ASSET_TAG_MAX_LENGTH = 12;
+
+    private const MAX_FILE_SIZE_KB = 5120;
+
+    private const EXCEL_DATE_MIN = 25567;
+
+    private const EXCEL_DATE_MAX = 80000;
+
+    private const MAX_FLOAT_PRECISION = 0.00001;
 
     /**
      * @var list<string>
@@ -234,12 +248,15 @@ class AssetImporter extends Importer
     public function getValidationMessages(): array
     {
         return [
-            'name.required' => ' Asset name column is required — this row will be skipped.',
-            'assetModel.required' => ' The asset model could not be determined — this row will be skipped.',
-            'import_category.required' => ' The category could not be determined — this row will be skipped.',
-            'import_status_label.required' => ' The status label could not be determined — this row will be skipped.',
-            'requestable.required' => ' The requestable value could not be determined — this row will be skipped.',
-            'serial.duplicate' => ' The serial is already assigned to another asset — this row will be skipped.',
+            'name.required' => 'Asset name is required. Check the "Name of Equipment" or "Asset Name" column.',
+            'assetModel.required' => 'Asset model could not be determined. Provide "Asset Model" or "Description/Specification" column.',
+            'import_category.required' => 'Category could not be determined. Provide a "Category" column or set a default category in import options.',
+            'import_status_label.required' => 'Status label could not be determined. Provide a "Status Label" column.',
+            'requestable.required' => 'Requestable value must be Yes/No or true/false.',
+            'serial.duplicate' => 'Serial number already exists in the system. Each serial must be unique.',
+            'purchase_date.invalid' => 'Invalid purchase date format. Use YYYY-MM-DD, DD/MM/YYYY, or MM/DD/YYYY.',
+            'warranty_expires.invalid' => 'Invalid warranty date format. Use YYYY-MM-DD, DD/MM/YYYY, or MM/DD/YYYY.',
+            'eol_date.invalid' => 'Invalid EOL date format. Use YYYY-MM-DD, DD/MM/YYYY, or MM/DD/YYYY.',
         ];
     }
 
@@ -308,8 +325,6 @@ class AssetImporter extends Importer
             }
 
             $this->record->supplier()->associate($supplier);
-        } else {
-            $this->record->supplier()->dissociate();
         }
 
         if (filled($this->data['import_location'] ?? null)) {
@@ -326,12 +341,14 @@ class AssetImporter extends Importer
                 ]);
                 $this->createdCounts['locations'] = ($this->createdCounts['locations'] ?? 0) + 1;
             } else {
+                if (! $location->department_id) {
+                    $location->department_id = $department->getKey();
+                    $location->save();
+                }
                 $this->reusedCounts['locations'] = ($this->reusedCounts['locations'] ?? 0) + 1;
             }
 
             $this->record->location()->associate($location);
-        } else {
-            $this->record->location()->dissociate();
         }
 
         if (! $category) {
@@ -370,8 +387,9 @@ class AssetImporter extends Importer
         $failedRowsCount = $import->getFailedRowsCount();
 
         if ($failedRowsCount > 0) {
-            $body .= ' Import completed with warnings: '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped because of missing or invalid data.';
-            $body .= ' If you see "system error" messages, please contact support.';
+            $body .= ' '.Number::format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' were skipped due to validation errors.';
+            $body .= ' Common issues: missing required fields (name, model, category), duplicate serial numbers, or invalid date formats.';
+            $body .= ' Download the failed rows file to see specific error messages for each row.';
         }
 
         $data = $import->data ?? [];
@@ -579,12 +597,12 @@ class AssetImporter extends Importer
 
         $whole = (int) round($value);
 
-        if (abs($value - $whole) > 0.00001) {
+        if (abs($value - $whole) > self::MAX_FLOAT_PRECISION) {
             return null;
         }
 
         // Typical Excel calendar serial range for real-world asset dates (~1970–2190).
-        if ($whole >= 25_567 && $whole <= 80_000) {
+        if ($whole >= self::EXCEL_DATE_MIN && $whole <= self::EXCEL_DATE_MAX) {
             try {
                 $dateTime = ExcelDate::excelToDateTimeObject($whole);
 
@@ -699,10 +717,10 @@ class AssetImporter extends Importer
             ?: $this->normalizeText($this->data['name'] ?? null)
             ?: Str::uuid()->toString();
 
-        $normalizedBase = Str::upper(Str::of($base)->replaceMatches('/[^A-Za-z0-9]+/', '')->substr(0, 12));
+        $normalizedBase = Str::upper(Str::of($base)->replaceMatches('/[^A-Za-z0-9]+/', '')->substr(0, self::ASSET_TAG_MAX_LENGTH));
 
         if ($normalizedBase) {
-            $assetTag = 'IMP-'.$normalizedBase;
+            $assetTag = self::ASSET_TAG_PREFIX.$normalizedBase;
 
             if (! Asset::query()->where('asset_tag', $assetTag)->exists()) {
                 return $assetTag;
@@ -710,7 +728,7 @@ class AssetImporter extends Importer
         }
 
         do {
-            $assetTag = 'IMP-'.Str::upper(Str::random(12));
+            $assetTag = self::ASSET_TAG_PREFIX.Str::upper(Str::random(self::ASSET_TAG_MAX_LENGTH));
         } while (Asset::query()->where('asset_tag', $assetTag)->exists());
 
         return $assetTag;

@@ -30,9 +30,11 @@ class ConsumablesTable
                 TextColumn::make('category.name')
                     ->searchable(),
                 TextColumn::make('supplier.name')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('-'),
                 TextColumn::make('location.name')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('-'),
                 TextColumn::make('asset_tag')
                     ->searchable(),
                 TextColumn::make('serial')

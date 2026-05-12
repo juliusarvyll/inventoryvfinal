@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Inventory;
 
 use App\Models\Asset;
@@ -12,16 +14,27 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
 use RuntimeException;
 
+/**
+ * Starts a preventive maintenance execution for an asset.
+ *
+ * Validates that the asset location matches the schedule, the checklist
+ * categories match the asset category, and creates execution records
+ * with audit logging.
+ */
 class StartPreventiveMaintenanceExecution
 {
     /**
-     * @param  list<array{
-     *     id: int|string,
-     *     is_passed?: bool|null,
-     *     input_value?: string|null,
-     *     item_notes?: string|null,
-     *     evidence_path?: string|null
-     * }>  $items
+     * Execute the action to start a PM execution.
+     *
+     * @param  PreventiveMaintenanceSchedule  $schedule  The PM schedule
+     * @param  PreventiveMaintenanceChecklist  $checklist  The checklist to execute
+     * @param  Asset  $asset  The asset being maintained
+     * @param  list<array{id: int|string, is_passed?: bool|null, input_value?: string|null, item_notes?: string|null, evidence_path?: string|null}>  $items  Checklist item results
+     * @param  User|null  $actor  User performing the maintenance
+     * @param  string|null  $generalNotes  General notes about the execution
+     * @return PreventiveMaintenanceExecution The created execution record
+     *
+     * @throws RuntimeException If validation fails
      */
     public function __invoke(
         PreventiveMaintenanceSchedule $schedule,

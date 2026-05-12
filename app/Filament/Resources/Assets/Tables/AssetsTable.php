@@ -63,11 +63,11 @@ class AssetsTable
                 TextColumn::make('supplier.name')
                     ->label('Supplier')
                     ->searchable()
-                    ->getStateUsing(fn ($record) => $record->supplier ? $record->supplier->name : 'Deleted'),
+                    ->placeholder('-'),
                 TextColumn::make('location.name')
                     ->label('Location')
                     ->searchable()
-                    ->getStateUsing(fn ($record) => $record->location ? $record->location->name : 'Deleted'),
+                    ->placeholder('-'),
                 TextColumn::make('serial')
                     ->searchable(),
                 TextColumn::make('purchase_cost')

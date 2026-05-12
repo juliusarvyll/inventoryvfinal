@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Locations\RelationManagers;
+namespace App\Filament\Resources\AssetModels\RelationManagers;
 
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -29,10 +29,10 @@ class AssetsRelationManager extends RelationManager
                     ->label('Status')
                     ->badge()
                     ->sortable(),
-                TextColumn::make('assetModel.name')
-                    ->label('Model')
+                TextColumn::make('location.name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
                 TextColumn::make('purchase_date')
                     ->date()
                     ->sortable()
